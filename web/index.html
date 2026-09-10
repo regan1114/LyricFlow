@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="description" content="在自己的電腦上，將歌曲與原歌詞對齊、試聽並匯出 SRT。" />
+    <title>LyricFlow · 歌詞對齊工作台</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="/styles.css" />
+    <script src="/app.js" type="module"></script>
+  </head>
+  <body>
+    <header class="app-header">
+      <a class="brand" href="/" aria-label="LyricFlow 首頁"
+        ><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M5 13v6m7-13v20m8-16v12m7-8v4" /></svg
+        ><span>LyricFlow<small>歌詞對齊工作台</small></span></a
+      >
+      <div class="local-badge"><span class="status-dot"></span>完全在本機處理</div>
+    </header>
+    <main>
+      <div class="page-heading">
+        <div>
+          <p class="eyebrow">AUDIO → LYRICS → SUBTITLES</p>
+          <h1>歌曲轉字幕</h1>
+        </div>
+        <p class="intro">放入歌曲與歌詞，讓每一句都有自己的時間。</p>
+      </div>
+      <div class="workspace">
+        <section class="input-panel" aria-labelledby="input-heading">
+          <div class="section-heading">
+            <h2 id="input-heading"><span class="step-number">01</span>匯入素材</h2>
+            <span class="muted">一首歌，一次完成</span>
+          </div>
+          <form id="alignment-form">
+            <fieldset id="inputs">
+              <legend class="sr-only">歌曲與歌詞</legend>
+              <label class="field-label" for="audio-file">歌曲音檔</label>
+              <div id="drop-zone" class="drop-zone">
+                <input
+                  id="audio-file"
+                  type="file"
+                  accept=".wav,.mp3,.m4a,.aac,.flac,.aiff,.aif,audio/*"
+                  aria-label="選擇歌曲音檔"
+                />
+                <svg class="upload-icon" viewBox="0 0 40 40" aria-hidden="true">
+                  <path d="M20 26V8m-6 6 6-6 6 6M8 25v7h24v-7" />
+                </svg>
+                <strong id="file-name">拖曳歌曲到這裡</strong>
+                <span id="file-detail">或點一下選擇檔案</span>
+                <small>WAV、MP3、M4A 等 · 最大 200 MB</small>
+              </div>
+              <div class="lyrics-label">
+                <label class="field-label" for="lyrics">歌詞</label
+                ><button id="import-lyrics" type="button" class="text-button">
+                  匯入 .txt <span aria-hidden="true">↗</span>
+                </button>
+              </div>
+              <input id="lyrics-file" type="file" accept=".txt,text/plain" hidden />
+              <textarea
+                id="lyrics"
+                placeholder="貼上原版或 Suno 歌詞…&#10;&#10;[Verse]&#10;每一句歌詞各放一行&#10;&#10;[Chorus]&#10;段落標記會自動略過"
+                maxlength="12000"
+                spellcheck="false"
+                required
+              ></textarea>
+              <div class="lyrics-meta">
+                <span>Suno 段落標記會自動略過</span><span id="line-count">0 行歌詞</span>
+              </div>
+              <div class="performance">
+                <label for="economy"><input id="economy" type="checkbox" />輕負載模式</label
+                ><span>減少處理器使用量</span>
+              </div>
+            </fieldset>
+            <button id="start-button" class="primary-button" type="submit" disabled>
+              <span>開始對齊</span><span aria-hidden="true">→</span>
+            </button>
+            <p class="local-note">音檔與歌詞只傳到這台電腦。</p>
+          </form>
+          <div id="error-box" class="error-box" role="alert" hidden></div>
+        </section>
+        <section class="result-panel" aria-labelledby="result-heading">
+          <div class="section-heading result-heading">
+            <h2 id="result-heading"><span class="step-number">02</span>預覽與匯出</h2>
+            <span id="result-count" class="muted">等待素材</span>
+          </div>
+          <div class="preview-deck">
+            <div class="deck-heading">
+              <span class="eyebrow">NOW PLAYING</span
+              ><span id="duration-label" class="mono">--:--</span>
+            </div>
+            <div id="current-subtitle" class="current-subtitle">讓聲音遇見文字</div>
+            <p id="track-name" class="track-name">選擇歌曲後，可在這裡試聽</p>
+            <audio id="player" controls preload="metadata" aria-label="歌曲試聽"></audio>
+          </div>
+          <div id="processing" class="processing" role="status" aria-live="polite" hidden>
+            <div class="processing-top">
+              <span class="spinner" aria-hidden="true"></span>
+              <div>
+                <strong id="processing-message">正在準備…</strong>
+                <p id="processing-detail">完成後會自動顯示結果</p>
+              </div>
+              <button id="cancel-button" class="secondary-button" type="button">停止</button>
+            </div>
+            <div class="progress-summary">
+              <span>目前階段進度</span><strong id="processing-percent">處理中</strong>
+            </div>
+            <progress id="upload-progress" max="100" aria-label="目前階段進度"></progress>
+            <p id="processing-hint" class="processing-hint">正在準備音訊。</p>
+          </div>
+          <div id="empty-state" class="empty-state">
+            <div class="empty-timeline" aria-hidden="true">
+              <span>00:00</span><i></i><span>00:30</span>
+            </div>
+            <h3>你的字幕時間軸</h3>
+            <p>
+              選擇歌曲、貼上歌詞，再按「開始對齊」。<br />完成後可以逐句試聽，微調時間並下載 SRT。
+            </p>
+            <div class="empty-tags">
+              <span>保留原始歌詞</span><span>自動略過間奏</span><span>離線也能用</span>
+            </div>
+          </div>
+          <div id="results" hidden>
+            <div class="retry-bar">
+              <div>
+                <strong id="missing-count" aria-live="polite">未定位 0 句</strong>
+                <p id="retry-hint">只重新辨識漏掉的片段，保留已定位與手動調整的時間。</p>
+              </div>
+              <button id="retry-button" class="secondary-button" type="button" disabled>
+                補辨識漏句
+              </button>
+            </div>
+            <div class="results-toolbar">
+              <div class="result-filters" role="group" aria-label="顯示字幕">
+                <button id="show-all" class="filter active" type="button" aria-pressed="true">
+                  全部 <span id="all-count">0</span></button
+                ><button id="show-review" class="filter" type="button" aria-pressed="false">
+                  待檢查 <span id="review-count">0</span>
+                </button>
+              </div>
+              <a id="report-link" class="text-button" href="#" download>檢查表 ↗</a>
+            </div>
+            <div class="table-heading" aria-hidden="true">
+              <span>#</span><span>歌詞 · 點一下試聽</span><span>開始 / 結束</span>
+            </div>
+            <div id="lyric-rows" class="lyric-rows"></div>
+            <p id="filter-empty" class="filter-empty" hidden>沒有待檢查的句子。</p>
+            <div class="export-bar">
+              <p id="export-note">時間為自動估計，建議試聽確認。</p>
+              <button id="download-button" class="primary-button compact" type="button">
+                下載 SRT <span aria-hidden="true">↓</span>
+              </button>
+            </div>
+          </div>
+        </section>
+      </div>
+      <footer>
+        <span>你的歌曲，留在你的電腦。</span
+        ><span id="connection-status"><span class="status-dot"></span>正在連接本機引擎</span>
+      </footer>
+    </main>
+    <div id="toast" class="toast" role="status" hidden></div>
+  </body>
+</html>

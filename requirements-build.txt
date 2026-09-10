@@ -1,0 +1,2 @@
+# Only needed by scripts/setup.py when building the CPU engine.
+cmake==3.31.6
