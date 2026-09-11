@@ -1,218 +1,205 @@
-# LyricFlow Windows
-
-Windows compatibility revision of [regan1114/LyricFlow](https://github.com/regan1114/LyricFlow). See [UPSTREAM.md](UPSTREAM.md) for provenance and [SECURITY-REVIEW.md](SECURITY-REVIEW.md) for audit scope. Native Windows support is pending Windows CI/device verification.
+# LyricFlow | Lyrics, Subtitles and Music Visualization
 
 [繁體中文](README.md) | **English**
 
-Align songs with supplied lyrics and create SRT subtitles on your own computer.
+LyricFlow brings songs, lyrics, images and video into an editable music visualization project. It includes a subtitle timeline, manual lyric timing, scene effects and video export. Use the browser edition online, or install the Python service to enable recognition on your own computer.
 
-## New frontend
+**[Open the online visual editor](https://lyric-flow-seven.vercel.app/)**
 
-The home page now runs the Vue 3 video editor imported from `video_visual`; its integrated source lives in `web/`. It provides media import, subtitle editing, manual timing, scene effects, and video export. See [frontend documentation](web/README.md).
-Use the top-right automatic recognition button after importing a song, enter lyrics in the dialog, and submit. Existing subtitles require replacement confirmation; cancelling keeps the dialog input and does not start a job. Progress and cancellation are available in the dialog. Subtitles are replaced only after successful recognition. Missing-line retries remain available through the [API](API.md) and CLI.
+> **The Vercel edition does not include automatic recognition.**
+> It deploys only the Vue frontend, with no Python backend, recognition engine or model. You can import songs and subtitles, edit lyrics, mark their timing manually and export videos. Automatic recognition and automatic lyric alignment require the local edition described below.
 
-Before the first Python application launch, install Node.js 22.12 or later and run in the project root on any platform:
+## Special thanks: 考拉醬 | 謎謎之音
+
+**Special thanks to [考拉醬 | 謎謎之音](https://www.youtube.com/@meme-koala) for providing the Web visualization tool.**
+
+LyricFlow's visual editor builds on the tool he provided, integrating subtitle editing, media timelines, project saving and the local recognition workflow. Thank you for sharing the tool and helping bring music visualization and lyric subtitles together for creators.
+
+Please visit **[考拉醬 | 謎謎之音 on YouTube](https://www.youtube.com/@meme-koala)** to enjoy and support his work!
+
+## Online and local editions
+
+| Feature                                   | Vercel online edition                                        | Local edition (Vue + Python)                    |
+| ----------------------------------------- | ------------------------------------------------------------ | ----------------------------------------------- |
+| Access                                    | [Open in your browser](https://lyric-flow-seven.vercel.app/) | Install and open `http://127.0.0.1:8765`        |
+| Media import, subtitles and manual timing | Available                                                    | Available                                       |
+| Visualization, scenes and video export    | Available, subject to browser support                        | Available, subject to browser support           |
+| Project downloads and browser drafts      | Available                                                    | Available                                       |
+| Automatic recognition / lyric alignment   | **Not available**                                            | Available after installing the engine and model |
+| Python and model installation             | Not required                                                 | Required                                        |
+
+The online edition edits, previews and exports your media in the browser, without sending songs to a Python recognition service. The manual timing feature records timestamps that you mark while listening. Automatic image sequencing, visual effects and spectrum analysis are separate from recognition.
+
+## Features
+
+- **Media timeline:** import audio, images and video; arrange, move, trim, split and duplicate clips; adjust audio levels.
+- **Subtitle editing:** import SRT, LRC or TXT; type or paste lyrics, search and replace text, and adjust cue boundaries.
+- **Marquee selection:** drag across empty subtitle-track space to select multiple cues, then move, duplicate or delete them together, with undo and redo.
+- **Manual lyric timing:** mark each line while listening, undo a mark, insert an empty timestamp and export subtitles.
+- **Music visualization:** spectrum and waveform displays, orb and vinyl modes, transitions, atmosphere effects and built-in scenes.
+- **Visual layout:** 16:9, 1:1 and 9:16 canvases, song information, fonts, logos, overlays and chroma key.
+- **Saving:** download a `.resonance` project containing your media and settings, or use an automatic draft in the current browser.
+- **Export:** download SRT/LRC subtitles or record the canvas and audio to MP4/WebM, depending on browser support.
+
+See the [Web frontend guide](web/README.md) for detailed controls (Traditional Chinese).
+
+## Start using the online editor
+
+1. Open the [online tool](https://lyric-flow-seven.vercel.app/) and import a song with **匯入音訊**.
+2. Import SRT/LRC/TXT through **匯入字幕**, or open **歌詞編輯 → 逐句字幕** to add and paste lyrics.
+3. Use **開始對時** to mark untimed lyrics while listening, or adjust existing timestamps in the timeline.
+4. Import visual media and choose your scenes and effects. Use manual timeline mode for video clips and explicitly scheduled visuals.
+5. Choose dimensions, frame rate, quality and range under **匯出設定**, then use the player's record button. Use the SRT/LRC buttons for subtitle-only exports.
+6. Check the draft status before leaving, or use **儲存專案** to download a `.resonance` backup for another device or future editing.
+
+During manual timing, Space or Right Arrow marks the current line, Left Arrow undoes a mark, `0` inserts an empty timestamp, and Enter finishes. On-screen buttons provide the same actions. Cancelling preserves the original subtitles.
+
+Video export records in real time. Available formats and performance depend on the browser. At approximately 256 MiB of buffered recording data, recording stops and saves the captured portion; reduce quality or export a shorter range for larger projects.
+
+## Drafts, projects and reset
+
+The **專案與草稿** panel can pause automatic saving, save immediately, restore or delete a draft, and show its timestamp, media count and status. After a reload, choose whether to restore the saved draft or replace it with your current work.
+
+Drafts use the current browser's IndexedDB and keep one latest version. Subtitle and settings changes reuse stored media. Failed saves preserve the previous successful draft and show an error; competing edits in different tabs require a choice before replacement.
+
+- Drafts are separate for each browser and website origin, including its port. Local, Vercel preview and production URLs do not share them automatically.
+- Clearing website data or confirming **重置** deletes that site's draft. Reset also clears current media, subtitles and editing state.
+- A `.resonance` download includes imported assets, subtitles, timelines and settings. Use **開啟專案** to restore it or move your work to another device.
+- Reset does not delete source files on your computer, downloaded projects, saved styles or Python recognition job files.
+
+## Run the frontend-only edition locally
+
+Install Node.js 22.12 or later. From the repository root:
+
+```sh
+npm ci
+npm run build:static
+npm run preview:static
+```
+
+Open the URL printed in the terminal. This uses the same **recognition-disabled** build mode as Vercel and writes to `web/dist-static/`. Python is not required.
+
+## Deploy your own Vercel site
+
+Push the source to GitHub, select **Add New → Project** in Vercel, import the repository and use these settings:
+
+| Setting               | Value                  |
+| --------------------- | ---------------------- |
+| Root Directory        | `web`                  |
+| Framework Preset      | `Vite`                 |
+| Install Command       | `npm ci`               |
+| Build Command         | `npm run build:static` |
+| Output Directory      | `dist-static`          |
+| Environment Variables | None required          |
+
+[web/vercel.json](web/vercel.json) supplies the build settings. Only the static frontend is published; Python is not deployed. After the first deployment, check **Settings → Environments → Production → Branch Tracking**. This project currently uses `master`. Subsequent pushes to the production branch update the site, while other branches can create preview deployments. See [Vercel's Git deployment documentation](https://vercel.com/docs/git#customizing-the-production-branch).
+
+The integrated frontend lives in `web/`. The local `video_visual/` folder is the original imported-tool backup, excluded from Git and not used for deployment.
+
+## Local edition with automatic recognition
+
+Recognition requires the Python service, engine and model on your computer. A regular `npm run build` writes to `web/dist/`, separately from the frontend-only `web/dist-static/` build.
+
+### Requirements
+
+- Node.js 22.12 or later for frontend installation and building.
+- Python 3.9–3.12; 3.12 is recommended. The backend currently does not support Python 3.13 or later.
+- C/C++ build tools on macOS/Linux. Native Windows x64 uses Visual Studio 2022 Build Tools with the Desktop development with C++ workload.
+- Internet access for the initial dependency, whisper.cpp and model downloads. Recognition runs on the local CPU; no GPU is required.
+
+### macOS / Linux
+
+Run from the repository root containing `app.py`. Check that `python3` meets the version requirement. On macOS, use `xcode-select --install` if build tools are missing; on Linux, install build tools and the `venv` package matching your Python version.
 
 ```sh
 npm ci
 npm run build
-```
-
-Then install and start the Python backend as described below. `app.py --open` and `start-windows.cmd` serve the new frontend at `http://127.0.0.1:8765`. Node.js is only required to build or develop the frontend, not for subsequent launches. Use `npm run dev` for frontend development and rebuild after changes.
-
-For a frontend-only Vercel deployment, import the Git repository and set **Root Directory to `web`**. The included `web/vercel.json` runs `npm run build:static`, publishes only `dist-static/`, and disables automatic recognition. No Python service or model is deployed. After the initial Git connection, pushes to the production branch update the site automatically. See the [deployment instructions](web/README.md#vercel只部署-vue-前端).
-
-The alignment descriptions below apply to the backend API and CLI.
-
-## Why this project exists
-
-LyricFlow helps creators make subtitles for songs without setting every timestamp by hand. Supply an audio file and the lyrics actually sung in it, then review and export the resulting timeline.
-It accepts ordinary lyrics and Suno-style lyrics, runs on your local CPU, and requires no paid recognition service. After the initial installation, it can run offline.
-
-- **Web interface:** upload a song, paste or import lyrics, preview individual lines, and download SRT.
-- **Progress and cancellation:** see the current processing stage and stop a job when needed.
-- **Retry missing lines:** recognize unmatched sections again while preserving existing and manually edited timestamps.
-- **Timestamp editing:** adjust line boundaries, with checks for overlaps, reversed times, and audio duration.
-
-The current interface is in Traditional Chinese, and recognition is configured for Chinese. Suno section markers such as `[Verse]` and `[Chorus]` are removed; sung text and repeated choruses are preserved.
-
-## Native Windows x64 (pending verification)
-
-Install Python 3.12 x64 with the `py` launcher and Visual Studio 2022 Build Tools with the Desktop development with C++ workload (MSVC v143 and Windows SDK). Extract a fresh source copy, run `setup-windows.cmd`, then `start-windows.cmd`. Do not reuse a macOS/WSL virtual environment or engine. Python 3.13+, ARM64 and 32-bit Windows are not supported by this installer. See the [Chinese README](README.md) for full troubleshooting instructions.
-
-The macOS/Linux and WSL2 installation routes remain available alongside native Windows.
-
-## Requirements
-
-- **Python 3.9–3.12; 3.12 is recommended.** The current audio pipeline uses `audioop`, which was removed in Python 3.13, so Python 3.13 and later are not supported. [Python documentation](https://docs.python.org/3/library/audioop.html)
-- **Windows x64, macOS or Linux**. Native Windows needs Visual Studio 2022 Build Tools; macOS/Linux need a C/C++ compiler and Make. This revision has passed Linux checks, while native Windows is pending CI/device verification. [WSL2](#windows-wsl2) remains an alternative.
-- Internet access for the initial Python packages, whisper.cpp source, and model downloads.
-- No GPU required. Processing uses four CPU threads by default, or two in economy mode.
-
-On macOS, install the command-line build tools if needed:
-
-```sh
-xcode-select --install
-```
-
-On Linux, install your distribution's C/C++ build tools, Make, and the `venv` package matching your Python version.
-
-## Installation
-
-### macOS / Linux
-
-Download or clone this repository and open a terminal in its root directory, where `app.py` is located. Check that `python3 --version` is within the supported range, then run:
-
-```sh
 python3 -m venv .venv
 source .venv/bin/activate
-python -m pip install --upgrade pip
 python -m pip install -r requirements.txt -r requirements-build.txt
 python scripts/setup.py
-```
-
-The setup script will:
-
-1. Download a [pinned whisper.cpp revision](https://github.com/ggml-org/whisper.cpp/tree/371b5a7561823ab2bb32142d2751e35e7534727b), verify its SHA-256 checksum, and build the CPU engine.
-2. Download and verify the multilingual `small` Q5_1 model, approximately 181 MiB.
-3. Store the executable, model, and engine license in `.local/`, then remove temporary source and build files.
-
-Running setup again keeps the installed engine and verifies the existing model. Use `python scripts/setup.py --rebuild` to rebuild the engine, or add `--jobs 1` to reduce compilation load.
-CMake is only needed for building. You may remove it afterward with `python -m pip uninstall cmake`; reinstall `requirements-build.txt` before rebuilding.
-
-### Windows (WSL2)
-
-On Windows, install and run the project in Ubuntu 24.04 through WSL2. Recognition still runs on your own computer and can work offline after the initial installation.
-These steps apply to Windows 11 or Windows 10 version 2004 (build 19041) and later. [Microsoft WSL installation guide](https://learn.microsoft.com/en-us/windows/wsl/install)
-
-**1. Install WSL2 and Ubuntu**
-
-Open **PowerShell as Administrator** and run:
-
-```powershell
-wsl --install -d Ubuntu-24.04
-```
-
-Restart Windows if prompted, then open **Ubuntu 24.04** from the Start menu and create a Linux username and password. You can also open Ubuntu from PowerShell with:
-
-```powershell
-wsl -d Ubuntu-24.04
-```
-
-**2. Install the required tools**
-
-From this step onward, run all installation commands in the **Ubuntu terminal**:
-
-```bash
-sudo apt update
-sudo apt install -y python3 python3-venv python3-pip build-essential
-```
-
-Ubuntu 24.04 provides Python 3.12 by default, which meets this project's requirements. [Ubuntu package information](https://packages.ubuntu.com/noble/python3)
-
-**3. Copy the project source**
-
-Download the source from GitHub and extract it to `C:\LyricFlow` on Windows, with `app.py` directly inside that folder.
-If copying from another computer, bring only the source files. Exclude `.venv/`, `.local/`, and `.cache/`; the Python environment and recognition engine need to be installed again inside Ubuntu.
-
-In Ubuntu, copy the project into your Linux home directory and enter it:
-
-```bash
-mkdir -p ~/LyricFlow
-cp -r /mnt/c/LyricFlow/. ~/LyricFlow/
-cd ~/LyricFlow
-```
-
-**4. Install the packages, recognition engine, and model**
-
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-python -m pip install --upgrade pip
-python -m pip install -r requirements.txt -r requirements-build.txt
-python scripts/setup.py --jobs 1
-```
-
-`--jobs 1` uses a single build job to reduce installation load. The setup script downloads and builds the CPU engine and downloads the model, approximately 181 MiB.
-
-## Run and use
-
-### macOS / Linux
-
-With the virtual environment activated:
-
-```sh
 python app.py --open
 ```
 
-Alternatively, run directly from the project root without activating the environment:
+Setup verifies downloads, builds whisper.cpp and stores the engine and model in `.local/`. After installation, launch with:
 
 ```sh
 .venv/bin/python app.py --open
 ```
 
-The browser opens **http://127.0.0.1:8765**. If it does not open automatically, visit that address manually. Keep the terminal open while using the app; press **Control+C** to stop it.
+Open `http://127.0.0.1:8765`. Keep the terminal running while using the app; press Ctrl+C to stop it.
 
-### Windows / WSL2
+### Windows
 
-Each time you want to use the app, open the **Ubuntu terminal** and run:
+Install Node.js, Python 3.12 x64 including the Python Launcher, and Visual Studio 2022 Build Tools. Run `npm ci` and `npm run build` in the repository root, then:
 
-```bash
-cd ~/LyricFlow
-.venv/bin/python app.py
-```
+1. Run `setup-windows.cmd` to install Python dependencies, the recognition engine and model.
+2. Run `start-windows.cmd` to open the local application.
 
-Then open **http://127.0.0.1:8765** in **Chrome or Edge on Windows**. Windows can access a web service running inside WSL through the local address. [Microsoft WSL networking guide](https://learn.microsoft.com/en-us/windows/wsl/networking)
-Keep the Ubuntu terminal open while using the app; press **Ctrl+C** to stop it.
+Native Windows support still needs device verification. Alternatively, use WSL2 and follow the Linux instructions inside Ubuntu. Do not share `.venv/` or `.local/` across operating systems.
 
-### Web interface
+### Recognition workflow
 
-1. Select a song: WAV, MP3, M4A, AAC, FLAC, or AIFF; up to 200 MB and 30 minutes.
-2. Paste lyrics or import a UTF-8 `.txt` file, with one sung line per line, and click **開始對齊** (Align).
-3. Preview and adjust the timestamps. For unmatched lines, click **補辨識漏句** (Retry missing lines).
-4. Click **下載 SRT** (Download SRT) to export the current timestamps.
+1. Import a song and add it to an audio track if needed.
+2. Click the top-right recognition icon; its hover label is **自動辨識**.
+3. Choose the song, enter one sung lyric line per line, and submit.
+4. Existing subtitles require replacement confirmation. Cancelling that confirmation preserves the input without submitting a job.
+5. Successful results replace the subtitles. Failed or cancelled recognition preserves the originals. Review and adjust the results in the timeline.
 
-Lyrics are limited to 12,000 characters and text files to 64 KB. One song is processed at a time. Audio uploads and recognition stay on the local machine.
-Progress percentages describe the current stage; recognition, retries, and export are separate stages.
+Recognition and lyric matching primarily target Chinese. Sustained notes, instrumental breaks, repeated sections and strong accompaniment can affect alignment, so review the timing by listening. Missing-line retries and integrations are documented in the [API guide](API.md).
 
-### Command line
-
-The CLI accepts PCM WAV audio. Use the web interface for other formats; the FFmpeg binary supplied by the Python dependency converts them locally.
-Replace the example paths with your own files:
+The CLI accepts PCM WAV audio and a lyrics text file:
 
 ```sh
 python lyric_flow.py /path/to/song.wav /path/to/lyrics.txt --threads 2 --output output
 ```
 
-Outputs include `.draft.srt`, `.review.txt`, and `.alignment.json`. Add `--no-retry` to disable automatic missing-line retries during the initial alignment.
+It produces `.draft.srt`, `.review.txt` and `.alignment.json` files. This `.draft.srt` is a recognition output file, separate from browser drafts.
 
-## Data and accuracy
+### Local Python data
 
-- `.venv/` holds the local Python environment; `.local/` holds the engine and model. Both are excluded by `.gitignore`.
-- `.cache/` stores uploaded materials, job results, and recognition caches. `output/` stores CLI exports. Private songs, lyrics, and generated results are not included in the repository.
-- The browser remembers the last job and timestamp edits. Download your SRT to keep a copy; clearing the site's browser data removes those local edits.
-- After stopping the server, you can delete `.cache/` and `output/`. Previous jobs will no longer be restorable, and future runs will need to recognize the audio again.
-- Keep `.gitignore` when publishing and use `git status --short` to check that inputs, environments, credentials, and caches are excluded.
+Uploaded audio, lyrics, job results and logs default to `.cache/interface/`; conversion and recognition caches use `.cache/lyric-flow/`. Cancelling recognition or resetting the web workspace does not remove these backend files. Back up results and stop the service before deleting the relevant cache directories.
 
-The timeline is produced by speech recognition and ordered lyric matching, rather than a dedicated singing forced-alignment model. Sustained notes, instrumental breaks, repeated sections, and accompaniment can affect the result.
-`text_match_score` measures text similarity, not timing accuracy. Unmatched lines are left without timestamps. Preview automatic and retried timestamps before using the subtitles.
+## Development and verification
 
-## Development and tests
+From the repository root:
 
-After installation, add the development tools. Node.js 22.12 or later and npm are needed to build and check the frontend, not to launch an already built application:
+```sh
+npm ci
+npm run dev
+```
+
+Development mode retains recognition and proxies `/api` to `http://127.0.0.1:8765`; start Python separately when using it. Rebuild with `npm run build` for the local edition or `npm run build:static` for the frontend-only edition.
+
+```sh
+npm run format:check
+npm run typecheck
+npm run lint
+npm test
+npm run test:static
+```
+
+`test:static` builds the recognition-disabled edition and uses local Google Chrome with a static preview server, without starting Python. With Python dependencies installed, run the complete local-edition checks:
 
 ```sh
 python -m pip install -r requirements-dev.txt
-npm ci
-python scripts/check.py
+python scripts/check.py --browser
 ```
 
-Checks cover Python formatting and linting, frontend behavior, the Flask backend, job management, and missing-line retries.
-The test server uses a separate port and temporary job directory, and shuts down and removes test uploads when finished.
-Seven integration tests requiring external song fixtures are skipped by default. See [ARCHITECTURE.md](ARCHITECTURE.md#開發與驗證) for fixture configuration (Traditional Chinese).
+Real recognition tests requiring external song fixtures and a model are skipped by default. See the [architecture and verification guide](ARCHITECTURE.md#開發與驗證) for setup. Keep `tests/` and `web/tests/` in version control; generated test results, private media, models and caches are excluded by `.gitignore`.
 
-Project layout: `lyricflow/` contains the backend and alignment pipeline; `web/` the interface; `tests/` the tests; and `scripts/` the setup and checking tools.
+## Project layout and credits
 
-## YouTube
+| Path                       | Purpose                                       |
+| -------------------------- | --------------------------------------------- |
+| `web/src/`                 | Vue 3 and TypeScript visual editor            |
+| `web/public/`              | Fonts, scenes and asset attribution           |
+| `web/vercel.json`          | Frontend-only Vercel deployment configuration |
+| `lyricflow/`               | Python API, recognition and lyric alignment   |
+| `app.py` / `lyric_flow.py` | Local web server / recognition CLI            |
+| `tests/` / `web/tests/`    | Backend / frontend and browser tests          |
+| `scripts/`                 | Setup and verification tools                  |
 
-Visit the [YouTube channel](https://www.youtube.com/@ReganOba) for more music.
+Special thanks again to **[考拉醬 | 謎謎之音](https://www.youtube.com/@meme-koala)** for the Web visualization tool. Third-party code licenses are retained in [THIRD-PARTY-LICENSES](web/public/THIRD-PARTY-LICENSES). Font and scene licenses and attribution remain in [web/public/](web/public/).
+
+Visit [ReganOba on YouTube](https://www.youtube.com/@ReganOba) for more music.

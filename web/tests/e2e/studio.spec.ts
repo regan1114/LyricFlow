@@ -470,7 +470,7 @@ test('lyrics editing toggles a 70/30 workspace with a working subtitle track', a
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
 
-test('OpenCut captions edit, search, split, drag, trim, lock and export in the shared workspace', async ({
+test('captions edit, search, split, drag, trim, lock and export in the shared workspace', async ({
   page,
 }) => {
   await openStudio(page);
@@ -532,12 +532,12 @@ test('OpenCut captions edit, search, split, drag, trim, lock and export in the s
   const exported = await fs.readFile((await download.path())!, 'utf8');
   expect(exported).toContain('00:00:01,000 -->');
   expect(exported).toContain('Hello 字幕');
-  await page.screenshot({ path: 'test-results/opencut-captions.png' });
+  await page.screenshot({ path: 'test-results/captions-editor.png' });
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(page.getByLabel('字幕 1 文字')).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.locator('.lyrics-panel').scrollIntoViewIfNeeded();
-  await page.screenshot({ path: 'test-results/opencut-captions-mobile.png', fullPage: true });
+  await page.screenshot({ path: 'test-results/captions-editor-mobile.png', fullPage: true });
 });
 
 test('lyrics and timeline panels resize, reset and retain sizes across layout toggles', async ({

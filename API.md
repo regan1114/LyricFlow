@@ -4,7 +4,7 @@
 
 ## 啟動服務
 
-先依 [README.md](README.md#安裝) 完成安裝，再於專案根目錄執行以下命令；按 Control+C 停止：
+先依 [README.md](README.md#本機版啟用自動辨識) 完成安裝，再於專案根目錄執行以下命令；按 Control+C 停止：
 
 ```sh
 .venv/bin/python app.py

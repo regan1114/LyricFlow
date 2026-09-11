@@ -6,7 +6,7 @@ import {
   type SubtitleCue,
 } from '../domain/subtitles';
 
-// Subtitle editing interactions adapted from OpenCut Studio (see public/LICENSE-OPENCUT).
+// Third-party notices for subtitle editing: see public/THIRD-PARTY-LICENSES.
 export function useSubtitleEditor(raw: Ref<string>, blocked: () => boolean) {
   function readLines(value: string): SubtitleCue[] {
     const timed = parseSubtitles(value);

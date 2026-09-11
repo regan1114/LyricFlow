@@ -47,7 +47,7 @@ class FlaskApplicationTests(unittest.TestCase):
 
             assets = re.findall(r'(?:src|href)="(/assets/[^" ]+)"', html)
             self.assertGreaterEqual(len(assets), 2)
-            for path in assets + ["/fonts/sources.json", "/LICENSE-OPENCUT"]:
+            for path in assets + ["/fonts/sources.json", "/THIRD-PARTY-LICENSES"]:
                 response = client.get(path, base_url=BASE)
                 self.assertEqual(response.status_code, 200, path)
                 response.close()
