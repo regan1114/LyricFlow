@@ -8,6 +8,26 @@
 
 在自己的電腦上，將歌曲與歌詞對齊，產生 SRT 字幕。
 
+## 新版前端
+
+目前首頁已改用 `video_visual` 的 Vue 3 影音編輯器，整合後的原始碼位於 `web/`。
+支援素材匯入、字幕時間軸、手動歌詞對時、場景特效與影片匯出；操作說明見 [前端文件](web/README.md)。
+右上角「自動辨識」可使用已匯入的歌曲，開啟彈窗輸入歌詞後送出。有現有字幕時先確認取代；取消確認會保留輸入並暫停送出。辨識成功後才替換字幕，失敗或取消辨識保留原內容。彈窗顯示辨識進度，完成後可在字幕時間軸微調；補辨識仍透過 [API](API.md)／CLI 使用。
+
+首次啟動前，先安裝 Node.js 22.12 以上並在專案根目錄執行（Windows／macOS／Linux 相同）：
+
+```sh
+npm ci
+npm run build
+```
+
+接著依下方步驟安裝並啟動 Python 後端。`app.py --open` 與 `start-windows.cmd` 會在原本的 `http://127.0.0.1:8765` 開啟新版。建置完成後，日常啟動不需要 Node.js。
+前端開發使用 `npm run dev`；修改後執行 `npm run build` 更新 Flask 提供的版本。
+
+若只要將 Vue 前端部署到 Vercel，匯入 Git 倉庫時將 **Root Directory 設為 `web`**。已提供 `web/vercel.json`，會執行 `npm run build:static`，只發布 `dist-static/` 並關閉自動辨識；完成首次連接後，推送正式分支即可自動更新。完整步驟見[前端部署文件](web/README.md#vercel只部署-vue-前端)。
+
+以下自動辨識功能說明適用於後端 API／CLI。
+
 ## 製作目的
 
 LyricFlow 為需要製作歌曲字幕的創作者而設計。提供音檔與實際演唱的歌詞，就能取得字幕時間軸，省下逐句設定時間的工作。
@@ -206,7 +226,7 @@ python lyric_flow.py /path/to/song.wav /path/to/lyrics.txt --threads 2 --output 
 
 ## 開發與測試
 
-一般自動測試不需要下載模型或編譯引擎；只有實際辨識測試需要完成安裝。再安裝開發工具；Node.js 22 以上與 npm 僅用於前端檢查，平常啟動程式不需要：
+一般自動測試不需要下載模型或編譯引擎；只有實際辨識測試需要完成安裝。再安裝開發工具；Node.js 22.12 以上與 npm 用於前端建置與檢查，完成建置後平常啟動程式不需要：
 
 ```sh
 python -m pip install -r requirements-dev.txt

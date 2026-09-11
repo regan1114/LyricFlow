@@ -6,6 +6,24 @@ Windows compatibility revision of [regan1114/LyricFlow](https://github.com/regan
 
 Align songs with supplied lyrics and create SRT subtitles on your own computer.
 
+## New frontend
+
+The home page now runs the Vue 3 video editor imported from `video_visual`; its integrated source lives in `web/`. It provides media import, subtitle editing, manual timing, scene effects, and video export. See [frontend documentation](web/README.md).
+Use the top-right automatic recognition button after importing a song, enter lyrics in the dialog, and submit. Existing subtitles require replacement confirmation; cancelling keeps the dialog input and does not start a job. Progress and cancellation are available in the dialog. Subtitles are replaced only after successful recognition. Missing-line retries remain available through the [API](API.md) and CLI.
+
+Before the first Python application launch, install Node.js 22.12 or later and run in the project root on any platform:
+
+```sh
+npm ci
+npm run build
+```
+
+Then install and start the Python backend as described below. `app.py --open` and `start-windows.cmd` serve the new frontend at `http://127.0.0.1:8765`. Node.js is only required to build or develop the frontend, not for subsequent launches. Use `npm run dev` for frontend development and rebuild after changes.
+
+For a frontend-only Vercel deployment, import the Git repository and set **Root Directory to `web`**. The included `web/vercel.json` runs `npm run build:static`, publishes only `dist-static/`, and disables automatic recognition. No Python service or model is deployed. After the initial Git connection, pushes to the production branch update the site automatically. See the [deployment instructions](web/README.md#vercel只部署-vue-前端).
+
+The alignment descriptions below apply to the backend API and CLI.
+
 ## Why this project exists
 
 LyricFlow helps creators make subtitles for songs without setting every timestamp by hand. Supply an audio file and the lyrics actually sung in it, then review and export the resulting timeline.
@@ -181,7 +199,7 @@ The timeline is produced by speech recognition and ordered lyric matching, rathe
 
 ## Development and tests
 
-After installation, add the development tools. Node.js 22 or later and npm are only needed for frontend checks, not for normal application use:
+After installation, add the development tools. Node.js 22.12 or later and npm are needed to build and check the frontend, not to launch an already built application:
 
 ```sh
 python -m pip install -r requirements-dev.txt

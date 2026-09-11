@@ -1,24 +1,16 @@
 """HTTP adapters: parse requests, call the service and construct responses."""
 
+import re
 from pathlib import Path
 
-from flask import Blueprint, current_app, jsonify, request, send_file
-from werkzeug.exceptions import NotFound, RequestEntityTooLarge
+from flask import Blueprint, current_app, jsonify, request, send_file, send_from_directory
+from werkzeug.exceptions import NotFound, RequestEntityTooLarge, ServiceUnavailable
 
 from .uploads import multipart_input, wait_requested
 from .validation import parse_job_input
 
 api = Blueprint("api", __name__, url_prefix="/api")
 web = Blueprint("web", __name__)
-WEB_FILES = {
-    "app.js",
-    "api.mjs",
-    "storage.mjs",
-    "progress.mjs",
-    "subtitles.mjs",
-    "styles.css",
-    "favicon.svg",
-}
 
 
 def alignment_service():
@@ -111,11 +103,19 @@ def align():
 
 @web.get("/")
 def index():
-    return send_file(current_app.extensions["settings"].web_path / "index.html", conditional=False)
+    directory = current_app.extensions["settings"].web_path
+    if not (directory / "index.html").is_file():
+        raise ServiceUnavailable("前端尚未建置，請在專案根目錄執行 npm ci 與 npm run build。")
+    return send_from_directory(directory, "index.html", conditional=False)
 
 
 @web.get("/<path:filename>")
 def asset(filename):
-    if filename not in WEB_FILES:
+    if filename.startswith("api/") or any(part.startswith(".") for part in filename.split("/")):
         raise NotFound()
-    return send_file(current_app.extensions["settings"].web_path / filename, conditional=False)
+    response = send_from_directory(current_app.extensions["settings"].web_path, filename)
+    if re.fullmatch(r"assets/.+-[A-Za-z0-9_-]{8,}\.(?:js|css)", filename):
+        response.headers["Cache-Control"] = "private, max-age=31536000, immutable"
+    else:
+        response.headers["Cache-Control"] = "private, max-age=0, must-revalidate"
+    return response

@@ -1,6 +1,7 @@
 """HTTP integration checks against the locally running app, without browser automation."""
 
 import json
+import re
 import struct
 import subprocess
 import tempfile
@@ -26,7 +27,11 @@ from tests.http_helpers import (
 
 class InterfaceTests(unittest.TestCase):
     def test_01_static_and_local_boundary(self):
-        for resource in ["/", "/app.js", "/subtitles.mjs", "/styles.css"]:
+        status, html, _ = request("GET", "/")
+        self.assertEqual(status, 200)
+        assets = re.findall(r'(?:src|href)="(/assets/[^" ]+)"', html.decode())
+        self.assertGreaterEqual(len(assets), 2)
+        for resource in ["/", *assets]:
             status, _, headers = request("GET", resource)
             self.assertEqual(status, 200)
             self.assertIn("connect-src 'self'", headers["Content-Security-Policy"])

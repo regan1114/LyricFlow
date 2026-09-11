@@ -69,15 +69,13 @@ flowchart TD
 
 ## 前端
 
-前端仍是原生 HTML、CSS、JavaScript，不需建置即可在離線環境執行。
+前端採用從 `video_visual` 整合的 Vue 3、TypeScript 與 Vite，原始碼位於 `web/src/`，字型與場景資源位於 `web/public/`。
+`npm ci` 安裝前端相依套件，`npm run build` 產生 `web/dist/`；Flask 首頁與靜態路由只提供此建置目錄中的檔案，不公開原始碼或專案設定。缺少建置時回傳 503 並提示建置指令。
 
-- `web/app.js`：畫面狀態、事件與 DOM 更新。
-- `web/api.mjs`：JSON 請求與可取消上傳，不操作 DOM。
-- `web/storage.mjs`：瀏覽器儲存，無法存取時仍能完成字幕下載。
-- `web/progress.mjs`：純函式轉換進度顯示資料。
-- `web/subtitles.mjs`：純函式處理時間、驗證重疊與產生 SRT。
+新版提供影音編輯、字幕時間軸、手動對時與錄影匯出。右上角自動辨識彈窗經 `useAutoRecognition` 呼叫健康檢查、建立工作、上傳音訊、輪詢及取消 API，成功後依音軌位置與裁切範圍套用 SRT。既有字幕先確認取代，取消確認不送出工作；處理失敗或取消不覆寫字幕。前端細節見 [web/README.md](web/README.md)。
 
-Python 使用 Ruff 統一格式與檢查，前端使用 Prettier。
+內建字型與場景由本機提供；已移除外部 Google Fonts 請求。CSP 允許 Vue 動態樣式與本機素材 blob URL，腳本仍限同源。
+Python 使用 Ruff；前端使用 Prettier、ESLint、vue-tsc、Vitest 與 Playwright。`scripts/check.py` 會在 HTTP 測試前建置新版前端。
 
 ## 安裝與本機資料
 
@@ -123,3 +121,13 @@ npm run format
 
 Flask 用法依據官方的 [Application Factories](https://flask.palletsprojects.com/en/stable/patterns/appfactories/)
 與 [Uploading Files](https://flask.palletsprojects.com/en/stable/patterns/fileuploads/) 文件。
+
+## 效能與回歸檢查
+
+字幕多選以 Set 查找，避免每句字幕反覆線性掃描全部選取項目；框選集合沒有改變時不重新發佈選取狀態。影音同步以單次掃描選擇最晚開始的有效畫面片段，維持相同開始時間的原順序，並快取影片素材清單。
+
+草稿使用 IndexedDB `resonance-projects` v2，`drafts/current` 保存清單與版本，`media` 分開保存原始 File。編輯停止 900 ms 後寫入，持續編輯最多等待 5 秒；匯入、辨識等忙碌期間暫停。交易原子更新清單、新增素材並刪除未引用素材，字幕／設定編輯不重寫既有媒體。版本比對防止多分頁靜默覆寫或復活已刪除草稿；重置先停止排程並等候進行中的寫入再刪除，只保留不含作品內容的版本識別碼以阻擋舊分頁的延遲寫入。支援恢復 v1 的封裝草稿；載入時先詢問使用者選擇，不自動恢復。草稿只保留最新一份，空間不足時保留前次成功內容並提示重試；重要作品仍可手動下載專案備份。自動辨識的讀取／上傳請求可中止，連線請求有 30 秒等待上限；取消後即使後端停止失敗，也不套用稍後回傳的結果。
+
+Flask 對帶內容雜湊的 JS／CSS 設定一年瀏覽器快取；字型與場景依 ETag 重新驗證。HTML、API、私人音訊與錯誤回應維持 `no-store`，避免沿用舊首頁或快取私人工作資料。
+
+`.venv/bin/python scripts/check.py --browser` 會建置前端，在獨立暫時服務依序執行後端及 Chrome 回歸測試，結束時自動關閉服務。需要 Google Chrome；不加 `--browser` 維持原本的快速檢查流程。直接匯入 TypeScript 原始碼的場景測試仍透過 Vite 的 `npm run test:e2e` 執行。

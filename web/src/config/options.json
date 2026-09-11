@@ -1,0 +1,276 @@
+{
+  "titleStyle": [
+    {
+      "value": "classic",
+      "label": "經典大字"
+    },
+    {
+      "value": "widget",
+      "label": "懸浮小工具"
+    }
+  ],
+  "aspectRatio": [
+    {
+      "value": "16:9",
+      "label": "16:9"
+    },
+    {
+      "value": "1:1",
+      "label": "1:1"
+    },
+    {
+      "value": "9:16",
+      "label": "9:16"
+    }
+  ],
+  "bgPlayMode": [
+    {
+      "value": "sequential",
+      "label": "順序"
+    },
+    {
+      "value": "random",
+      "label": "隨機"
+    }
+  ],
+  "bgSwitchTrigger": [
+    {
+      "value": "time",
+      "label": "依時間"
+    },
+    {
+      "value": "lyric",
+      "label": "依歌詞"
+    }
+  ],
+  "videoTransitionMode": [
+    {
+      "value": "wait",
+      "label": "播完換頁"
+    },
+    {
+      "value": "strict",
+      "label": "固定秒數"
+    }
+  ],
+  "videoSpeed": [
+    {
+      "value": 1,
+      "label": "1.0x"
+    },
+    {
+      "value": 0.75,
+      "label": "0.75x"
+    }
+  ],
+  "lyricsPosition": [
+    {
+      "value": "list-left",
+      "label": "輪盤滾動"
+    },
+    {
+      "value": "bottom",
+      "label": "置底"
+    },
+    {
+      "value": "center",
+      "label": "置中"
+    }
+  ],
+  "lyricsEffect": [
+    {
+      "value": "default",
+      "label": "純淨模式"
+    },
+    {
+      "value": "particle",
+      "label": "星軌碎屑"
+    },
+    {
+      "value": "ink",
+      "label": "流體暈染"
+    },
+    {
+      "value": "wave",
+      "label": "音頻律動"
+    },
+    {
+      "value": "elven",
+      "label": "精靈古文"
+    },
+    {
+      "value": "gravity",
+      "label": "黑洞重力場"
+    },
+    {
+      "value": "chladni",
+      "label": "音頻沙畫"
+    },
+    {
+      "value": "vapor",
+      "label": "煙嵐疊影"
+    },
+    {
+      "value": "glitch",
+      "label": "故障干擾"
+    },
+    {
+      "value": "typewriter",
+      "label": "打字機逐字"
+    },
+    {
+      "value": "neon",
+      "label": "霓虹招牌"
+    },
+    {
+      "value": "split-flap",
+      "label": "翻牌字幕"
+    }
+  ],
+  "lyricsSize": [
+    {
+      "value": "default",
+      "label": "預設"
+    },
+    {
+      "value": "large",
+      "label": "大"
+    },
+    {
+      "value": "xlarge",
+      "label": "大大"
+    }
+  ],
+  "waveformStyle": [
+    {
+      "value": "none",
+      "label": "無"
+    },
+    {
+      "value": "line",
+      "label": "即時波形"
+    },
+    {
+      "value": "bar",
+      "label": "柱狀"
+    },
+    {
+      "value": "radial",
+      "label": "環狀"
+    }
+  ],
+  "logoPosition": [
+    {
+      "value": "top-left",
+      "label": "左上角"
+    },
+    {
+      "value": "top-right",
+      "label": "右上角"
+    },
+    {
+      "value": "bottom-left",
+      "label": "左下角"
+    },
+    {
+      "value": "bottom-right",
+      "label": "右下角"
+    }
+  ],
+  "overlayBlendMode": [
+    {
+      "value": "source-over",
+      "label": "正常"
+    },
+    {
+      "value": "screen",
+      "label": "濾色 (去黑)"
+    },
+    {
+      "value": "multiply",
+      "label": "色彩增值 (去白)"
+    },
+    {
+      "value": "overlay",
+      "label": "覆蓋"
+    }
+  ],
+  "colorGradePreset": [
+    {
+      "value": "none",
+      "label": "關閉"
+    },
+    {
+      "value": "cinematic",
+      "label": "電影感青橙"
+    },
+    {
+      "value": "vhs",
+      "label": "復古 VHS"
+    },
+    {
+      "value": "cyberpunk",
+      "label": "賽博龐克"
+    },
+    {
+      "value": "noir",
+      "label": "黑白諾瓦"
+    },
+    {
+      "value": "dreamy",
+      "label": "柔焦夢幻"
+    }
+  ],
+  "bgTransitionStyle": [
+    {
+      "value": "crossfade",
+      "label": "淡入淡出"
+    },
+    {
+      "value": "blur-morph",
+      "label": "模糊融接"
+    }
+  ],
+  "ambientDriftMode": [
+    {
+      "value": "off",
+      "label": "關閉"
+    },
+    {
+      "value": "fog",
+      "label": "霧氣"
+    },
+    {
+      "value": "aurora",
+      "label": "極光"
+    }
+  ],
+  "colorMode": [
+    {
+      "value": "random",
+      "label": "隨機色系 (每 16 秒自動切換)"
+    },
+    {
+      "value": "auto-image",
+      "label": "自動配色 (從背景畫面取樣主色)"
+    }
+  ],
+  "visualMode": [
+    {
+      "value": "orb",
+      "label": "靈魂光球 (Orb)"
+    },
+    {
+      "value": "fluid",
+      "label": "流體共鳴 (Fluid)"
+    },
+    {
+      "value": "vinyl",
+      "label": "黑膠唱片 (Vinyl)"
+    },
+    {
+      "value": "none",
+      "label": "關閉"
+    }
+  ]
+}

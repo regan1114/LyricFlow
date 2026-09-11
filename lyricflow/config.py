@@ -32,7 +32,7 @@ class Settings:
 
     @property
     def web_path(self) -> Path:
-        return self.root / "web"
+        return self.root / "web" / "dist"
 
     @property
     def ready(self) -> bool:

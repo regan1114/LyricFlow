@@ -1,0 +1,175 @@
+[
+  {
+    "family": "notosanstc",
+    "source": "https://raw.githubusercontent.com/google/fonts/main/ofl/notosanstc/NotoSansTC%5Bwght%5D.ttf",
+    "source_sha256": "864727d210d54f2537bbe23b3a839436c3992af72de9322af5270897246bd44f",
+    "license": "OFL-1.1",
+    "license_url": "https://raw.githubusercontent.com/google/fonts/main/ofl/notosanstc/OFL.txt",
+    "glyph_count": 20745,
+    "woff2_bytes": 5423916
+  },
+  {
+    "family": "notoseriftc",
+    "source": "https://raw.githubusercontent.com/google/fonts/main/ofl/notoseriftc/NotoSerifTC%5Bwght%5D.ttf",
+    "source_sha256": "0077e18f57c6908f4a000969880940bdb0dad057c0e8d98b49dc364c3d1b09c6",
+    "license": "OFL-1.1",
+    "license_url": "https://raw.githubusercontent.com/google/fonts/main/ofl/notoseriftc/OFL.txt",
+    "glyph_count": 20748,
+    "woff2_bytes": 7657420
+  },
+  {
+    "family": "huninn",
+    "source": "https://raw.githubusercontent.com/google/fonts/main/ofl/huninn/Huninn-Regular.ttf",
+    "source_sha256": "1bd770a5ffc0c06723b567686f8b5db5abf9ab54227f3bbc4e6fd648f4698805",
+    "license": "OFL-1.1",
+    "license_url": "https://raw.githubusercontent.com/google/fonts/main/ofl/huninn/OFL.txt",
+    "glyph_count": 11364,
+    "woff2_bytes": 2124068
+  },
+  {
+    "family": "lxgwwenkaitc",
+    "source": "https://raw.githubusercontent.com/google/fonts/main/ofl/lxgwwenkaitc/LXGWWenKaiTC-Regular.ttf",
+    "source_sha256": "4fcc5aec11cbbf737b0cfab7b63796f7f280087a7a656b2f13342cd5e5318d95",
+    "license": "OFL-1.1",
+    "license_url": "https://raw.githubusercontent.com/google/fonts/main/ofl/lxgwwenkaitc/OFL.txt",
+    "glyph_count": 22401,
+    "woff2_bytes": 4921332
+  },
+  {
+    "family": "iansui",
+    "source": "https://raw.githubusercontent.com/google/fonts/main/ofl/iansui/Iansui-Regular.ttf",
+    "source_sha256": "6e6340d80d618a42b48ade9370c34fa37a8210750c6fbc8efe65f23716538a2b",
+    "license": "OFL-1.1",
+    "license_url": "https://raw.githubusercontent.com/google/fonts/main/ofl/iansui/OFL.txt",
+    "glyph_count": 12639,
+    "woff2_bytes": 2979656
+  },
+  {
+    "family": "chironheihk",
+    "source": "https://raw.githubusercontent.com/google/fonts/main/ofl/chironheihk/ChironHeiHK%5Bwght%5D.ttf",
+    "source_sha256": "0d788ded72dc88f478818182179af4c7cd143df0bf86557d29729ab132333930",
+    "license": "OFL-1.1",
+    "license_url": "https://raw.githubusercontent.com/google/fonts/main/ofl/chironheihk/OFL.txt",
+    "glyph_count": 47623,
+    "woff2_bytes": 12418720
+  },
+  {
+    "family": "chironsunghk",
+    "source": "https://raw.githubusercontent.com/google/fonts/main/ofl/chironsunghk/ChironSungHK%5Bwght%5D.ttf",
+    "source_sha256": "c88d5db947f4aad3399105d2c1c808a64580ab65e8cb26e58bb81cd96843d130",
+    "license": "OFL-1.1",
+    "license_url": "https://raw.githubusercontent.com/google/fonts/main/ofl/chironsunghk/OFL.txt",
+    "glyph_count": 46907,
+    "woff2_bytes": 17036864
+  },
+  {
+    "family": "chenyu",
+    "source": "https://raw.githubusercontent.com/Chenyu-otf/chenyuluoyan_thin/main/ChenYuluoyan-2.0-Thin.ttf",
+    "source_sha256": "1289e42a6d1ec995d0cb23aee89efc69fc95749fbd54a610057a3e992dc453db",
+    "license": "OFL-1.1",
+    "license_url": "https://raw.githubusercontent.com/Chenyu-otf/chenyuluoyan_thin/main/license.txt",
+    "glyph_count": 10137,
+    "weight": 400,
+    "woff2_bytes": 4809064,
+    "original_metadata": {
+      "0": [
+        "(c) 2022 王立宇、劉韋辰 版權所有。",
+        "Copyright (c) 2022, Wang, Li-Yu & Liu, Wei-Chen."
+      ],
+      "1": [
+        "辰宇落雁體 2.0 Thin",
+        "ChenYuluoyan 2.0 Thin"
+      ],
+      "2": [
+        "Regular"
+      ],
+      "13": [
+        "The ChenYuluoyan-Thin font is written by Liu, Wei-Chen, created by Wang, Li-Yu, with Reserved Font Names '' and 'Chenyuluoyan'. under SIL Open Font License, Version 1.1.\n\nThis license is copied below, and is also available with a FAQ at:\nhttp://scripts.sil.org/OFL"
+      ],
+      "14": [
+        "http://scripts.sil.org/OFL"
+      ]
+    }
+  },
+  {
+    "family": "jason1",
+    "source": "https://raw.githubusercontent.com/jasonhandwriting/JasonHandwriting/master/JasonHandwriting1.ttf",
+    "source_sha256": "de76a15b1e2c1a7050d061485e28195f5b682d45e37499cf730c2b8554c44cf3",
+    "license": "OFL-1.1",
+    "license_url": "https://github.com/jasonhandwriting/JasonHandwriting",
+    "glyph_count": 11014,
+    "weight": 400,
+    "woff2_bytes": 4326380,
+    "original_metadata": {
+      "0": [
+        "?Copyright 2020, JasonHandwriting1 is created by Jason(Yu Ching Sung) under SIL Open Font License.",
+        "© Copyright 2020, JasonHandwriting1 is created by Jason(Yu Ching Sung) under SIL Open Font License."
+      ],
+      "1": [
+        "JasonHandwriting1",
+        "清松手寫體1",
+        "清松手写体1"
+      ],
+      "2": [
+        "Regular"
+      ],
+      "13": [],
+      "14": []
+    }
+  },
+  {
+    "family": "jason4",
+    "source": "https://raw.githubusercontent.com/jasonhandwriting/JasonHandwriting/master/JasonHandwriting4.ttf",
+    "source_sha256": "1db91107a80c78e6d04b6d78f86a4b8946f083cb0b41ff5864009c4e1698ee4b",
+    "license": "OFL-1.1",
+    "license_url": "https://github.com/jasonhandwriting/JasonHandwriting",
+    "glyph_count": 5291,
+    "weight": 400,
+    "woff2_bytes": 2046064,
+    "original_metadata": {
+      "0": [
+        "(c) Copyright 2020, JasonHandwriting4 is created by Jason(Yu Ching Sung) under SIL Open Font License."
+      ],
+      "1": [
+        "JasonHandwriting4",
+        "清松手寫體4-Regular",
+        "清松手写体4-Regular"
+      ],
+      "2": [
+        "Regular"
+      ],
+      "13": [
+        "Copyright (c) 2020, Yu Ching Sung (<URL|email>),\nwith Reserved Font Name JasonHandwriting4.\n\nThis Font Software is licensed under the SIL Open Font License, Version 1.1.\nThis license is copied below, and is also available with a FAQ at:\nhttp://scripts.sil.org/OFL\n\n\n-----------------------------------------------------------\nSIL OPEN FONT LICENSE Version 1.1 - 26 February 2007\n-----------------------------------------------------------\n\nPREAMBLE\nThe goals of the Open Font License (OFL) are to stimulate worldwide\ndevelopment of collaborative font projects, to support the font creation\nefforts of academic and linguistic communities, and to provide a free and\nopen framework in which fonts may be shared and improved in partnership\nwith others.\n\nThe OFL allows the licensed fonts to be used, studied, modified and\nredistributed freely as long as they are not sold by themselves. The\nfonts, including any derivative works, can be bundled, embedded, \nredistributed and/or sold with any software provided that any reserved\nnames are not used by derivative works. The fonts and derivatives,\nhowever, cannot be released under any other type of license. The\nrequirement for fonts to remain under this license does not apply\nto any document created using the fonts or their derivatives.\n\nDEFINITIONS\n\"Font Software\" refers to the set of files released by the Copyright\nHolder(s) under this license and clearly marked as such. This may\ninclude source files, build scripts and documentation.\n\n\"Reserved Font Name\" refers to any names specified as such after the\ncopyright statement(s).\n\n\"Original Version\" refers to the collection of Font Software components as\ndistributed by the Copyright Holder(s).\n\n\"Modified Version\" refers to any derivative made by adding to, deleting,\nor substituting -- in part or in whole -- any of the components of the\nOriginal Version, by changing formats or by porting the Font Software to a\nnew environment.\n\n\"Author\" refers to any designer, engineer, programmer, technical\nwriter or other person who contributed to the Font Software.\n\nPERMISSION & CONDITIONS\nPermission is hereby granted, free of charge, to any person obtaining\na copy of the Font Software, to use, study, copy, merge, embed, modify,\nredistribute, and sell modified and unmodified copies of the Font\nSoftware, subject to the following conditions:\n\n4) Neither the Font Software nor any of its individual components,\nin Original or Modified Versions, may be sold by itself.\n\n2) Original or Modified Versions of the Font Software may be bundled,\nredistributed and/or sold with any software, provided that each copy\ncontains the above copyright notice and this license. These can be\nincluded either as stand-alone text files, human-readable headers or\nin the appropriate machine-readable metadata fields within text or\nbinary files as long as those fields can be easily viewed by the user.\n\n3) No Modified Version of the Font Software may use the Reserved Font\nName(s) unless explicit written permission is granted by the corresponding\nCopyright Holder. This restriction only applies to the primary font name as\npresented to the users.\n\n4) The name(s) of the Copyright Holder(s) or the Author(s) of the Font\nSoftware shall not be used to promote, endorse or advertise any\nModified Version, except to acknowledge the contribution(s) of the\nCopyright Holder(s) and the Author(s) or with their explicit written\npermission.\n\n5) The Font Software, modified or unmodified, in part or in whole,\nmust be distributed entirely under this license, and must not be\ndistributed under any other license. The requirement for fonts to\nremain under this license does not apply to any document created\nusing the Font Software.\n\nTERMINATION\nThis license becomes null and void if any of the above conditions are\nnot met.\n\nDISCLAIMER\nTHE FONT SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND,\nEXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO ANY WARRANTIES OF\nMERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT\nOF COPYRIGHT, PATENT, TRADEMARK, OR OTHER RIGHT. IN NO EVENT SHALL THE\nCOPYRIGHT HOLDER BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,\nINCLUDING ANY GENERAL, SPECIAL, INDIRECT, INCIDENTAL, OR CONSEQUENTIAL\nDAMAGES, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING\nFROM, OUT OF THE USE OR INABILITY TO USE THE FONT SOFTWARE OR FROM\nOTHER DEALINGS IN THE FONT SOFTWARE."
+      ],
+      "14": [
+        "http://scripts.sil.org/OFL"
+      ]
+    }
+  },
+  {
+    "family": "jason5",
+    "source": "https://raw.githubusercontent.com/jasonhandwriting/JasonHandwriting/master/JasonHandwriting5.ttf",
+    "source_sha256": "2f0a54b56a79961e44f38d95ea293d113362e6eff438a2c351e60390d60f7960",
+    "license": "OFL-1.1",
+    "license_url": "https://github.com/jasonhandwriting/JasonHandwriting",
+    "glyph_count": 6537,
+    "weight": 400,
+    "woff2_bytes": 3054960,
+    "original_metadata": {
+      "0": [
+        "Copyright 2021, JasonHandwriting5 is created by Jason(Yu Ching Sung) under SIL Open Font License.",
+        "© Copyright 2021, JasonHandwriting5 is created by Jason(Yu Ching Sung) under SIL Open Font License."
+      ],
+      "1": [
+        "JasonHandwriting5",
+        "清松手寫體5",
+        "清松手写体5"
+      ],
+      "2": [
+        "Regular"
+      ],
+      "13": [],
+      "14": []
+    }
+  }
+]

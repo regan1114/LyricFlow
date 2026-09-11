@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Run checks against a temporary local server; always stop that server afterward."""
 
+import argparse
 import json
 import os
 import socket
@@ -65,13 +66,34 @@ def test_server():
 
 
 def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--browser",
+        action="store_true",
+        help="Also run Chrome tests against the built Flask interface",
+    )
+    args = parser.parse_args()
     run(sys.executable, "-m", "ruff", "check", ".")
     run(sys.executable, "-m", "ruff", "format", "--check", ".")
     npm = "npm.cmd" if sys.platform == "win32" else "npm"
     run(npm, "run", "format:check")
+    run(npm, "run", "typecheck")
+    run(npm, "run", "lint")
     run(npm, "test")
+    run(npm, "run", "build")
     with test_server() as environment:
         run(sys.executable, "-m", "unittest", "discover", "-s", "tests", "-v", env=environment)
+        if args.browser:
+            run(
+                npm,
+                "--prefix",
+                "web",
+                "run",
+                "test:e2e",
+                "--",
+                "--workers=2",
+                env=dict(environment, PLAYWRIGHT_BASE_URL=environment["LYRIC_FLOW_TEST_URL"]),
+            )
     print("All checks passed. The temporary server and uploaded test files have been cleaned up.")
 
 

@@ -21,8 +21,8 @@ from .routes import api, web
 from .service import AlignmentService
 
 CSP = (
-    "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; "
-    "media-src 'self' blob:; connect-src 'self'; frame-ancestors 'none'"
+    "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; "
+    "media-src 'self' blob:; connect-src 'self' blob:; font-src 'self'; object-src 'none'; frame-ancestors 'none'"
 )
 
 
@@ -61,9 +61,10 @@ def create_app(settings=None, service=None):
 
     @app.after_request
     def response_headers(response):
+        if request.endpoint != "web.asset" or response.status_code >= 400:
+            response.headers["Cache-Control"] = "no-store"
         response.headers.update(
             {
-                "Cache-Control": "no-store",
                 "X-Content-Type-Options": "nosniff",
                 "Referrer-Policy": "no-referrer",
                 "Cross-Origin-Resource-Policy": "same-origin",

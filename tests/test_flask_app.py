@@ -35,14 +35,62 @@ class FlaskApplicationTests(unittest.TestCase):
         self.assertEqual(second.get(job.json["status_url"], base_url=BASE).status_code, 404)
         self.assertEqual(second.post("/api/jobs", json=metadata, base_url=BASE).status_code, 201)
 
-    def test_web_modules_are_served_and_private_files_are_not(self):
+    def test_built_frontend_and_private_file_boundary(self):
         with self.apps[0].test_client() as client:
-            for path in ["/api.mjs", "/storage.mjs", "/progress.mjs"]:
+            response = client.get("/", base_url=BASE)
+            self.assertEqual(response.status_code, 200)
+            html = response.get_data(as_text=True)
+            self.assertIn('<div id="app"></div>', html)
+            self.assertNotIn("/src/main.ts", html)
+            response.close()
+            import re
+
+            assets = re.findall(r'(?:src|href)="(/assets/[^" ]+)"', html)
+            self.assertGreaterEqual(len(assets), 2)
+            for path in assets + ["/fonts/sources.json", "/LICENSE-OPENCUT"]:
                 response = client.get(path, base_url=BASE)
-                self.assertEqual(response.status_code, 200)
-                self.assertIn("javascript", response.content_type)
+                self.assertEqual(response.status_code, 200, path)
                 response.close()
-            self.assertEqual(client.get("/lyricflow/config.py", base_url=BASE).status_code, 404)
+            for path in [
+                "/lyricflow/config.py",
+                "/src/main.ts",
+                "/package.json",
+                "/../index.html",
+                "/assets/../../package.json",
+                "/.git/config",
+                "/api/missing",
+            ]:
+                self.assertEqual(client.get(path, base_url=BASE).status_code, 404, path)
+
+    def test_static_assets_revalidate_but_api_and_html_are_not_cached(self):
+        import re
+
+        with self.apps[0].test_client() as client:
+            page = client.get("/", base_url=BASE)
+            self.assertEqual(page.headers["Cache-Control"], "no-store")
+            filename = re.search(r'src="(/assets/[^" ]+)', page.get_data(as_text=True))[1]
+            page.close()
+            asset = client.get(filename, base_url=BASE)
+            self.assertIn("immutable", asset.headers["Cache-Control"])
+            etag = asset.headers["ETag"]
+            asset.close()
+            cached = client.get(filename, base_url=BASE, headers={"If-None-Match": etag})
+            self.assertEqual(cached.status_code, 304)
+            self.assertFalse(cached.data)
+            cached.close()
+            font = client.get("/fonts/sources.json", base_url=BASE)
+            self.assertIn("must-revalidate", font.headers["Cache-Control"])
+            font.close()
+            for path in ["/api/health", "/assets/missing.js", "/api/jobs/missing/audio"]:
+                response = client.get(path, base_url=BASE)
+                self.assertEqual(response.headers["Cache-Control"], "no-store", path)
+
+    def test_missing_frontend_build_has_actionable_error(self):
+        app = self.apps[0]
+        app.extensions["settings"] = Settings(root=Path(self.temporary.name))
+        response = app.test_client().get("/", base_url=BASE)
+        self.assertEqual(response.status_code, 503)
+        self.assertIn("npm run build", response.json["error"])
 
     def test_unknown_routes_and_invalid_input_return_json(self):
         client = self.apps[0].test_client()

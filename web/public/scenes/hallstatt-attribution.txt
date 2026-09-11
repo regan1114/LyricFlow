@@ -1,0 +1,15 @@
+Hallstatt - Nordansicht.JPG
+Photograph © C.Stadler/Bwag, CC BY-SA 4.0
+https://commons.wikimedia.org/wiki/File:Hallstatt_-_Nordansicht.JPG
+https://creativecommons.org/licenses/by-sa/4.0/
+Image resized; interactive lighting, sky, water, and celestial overlays added.
+The adapted photographic visual is offered under CC BY-SA 4.0.
+Camera: 47.564620 N, 13.650020 E, heading 210 degrees. 24 mm full-frame lens.
+Camera pitch and crop are approximately calibrated, not surveyed.
+Astronomy Engine 2.1.19 © Don Cross, MIT License (retained in the astronomy-engine dependency source).
+https://github.com/cosinekitty/astronomy
+
+Lunar surface base color: NASA's Scientific Visualization Studio, CGI Moon Kit / LROC.
+https://svs.gsfc.nasa.gov/4720/
+https://svs.gsfc.nasa.gov/vis/a000000/a004700/a004720/lroc_color_2k.jpg
+Original NASA map retained; rendered with phase illumination, north-pole orientation, and libration.

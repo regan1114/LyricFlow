@@ -45,6 +45,7 @@ tests/fixtures/
 .agents/
 .idea/
 .vscode/
+.vercel/
 .DS_Store
 Thumbs.db
 
@@ -60,3 +61,8 @@ htmlcov/
 *.partial
 *.zip
 *.tar.gz
+
+# Imported frontend source remains in video_visual; integrated app lives in web.
+/video_visual/
+!web/public/fonts/*-OFL.txt
+!web/public/scenes/*-attribution.txt
