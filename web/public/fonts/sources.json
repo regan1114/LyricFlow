@@ -171,5 +171,131 @@
       "13": [],
       "14": []
     }
+  },
+  {
+    "family": "bakudai-regular",
+    "source": "https://raw.githubusercontent.com/max32002/bakudaifont/f1eb195cfd665d95311f2fd720068ef5b1cf6115/webfont/Bakudai-Regular.woff2",
+    "source_sha256": "66aea3c4d0c8fd10f3021bdf0bf784696473bb7285ca38572c717ade7d2ccc25",
+    "license": "OFL-1.1",
+    "license_url": "https://github.com/max32002/bakudaifont/blob/f1eb195cfd665d95311f2fd720068ef5b1cf6115/README.md",
+    "license_text_source": "Original WOFF2 name table (nameID 13), preserved in bakudai-regular-OFL.txt",
+    "glyph_count": 24947,
+    "weight": 400,
+    "woff2_bytes": 6718264,
+    "original_metadata": {
+      "0": [
+        "AoyagiKouzan",
+        "莫大毛筆",
+        "青柳衡山"
+      ],
+      "1": [
+        "Bakudai",
+        "莫大毛筆-Regular",
+        "莫大毛筆フォント-Regular"
+      ],
+      "2": [
+        "Regular"
+      ],
+      "5": [
+        "Version 1.46"
+      ],
+      "14": [
+        "http://scripts.sil.org/OFL"
+      ]
+    }
+  },
+  {
+    "family": "bakudai-bold",
+    "source": "https://raw.githubusercontent.com/max32002/bakudaifont/f1eb195cfd665d95311f2fd720068ef5b1cf6115/webfont/Bakudai-Bold.woff2",
+    "source_sha256": "d99e0c3de4c864b3625648bc65620b6cf042ede8a5e239b2b8ec199bf08d4534",
+    "license": "OFL-1.1",
+    "license_url": "https://github.com/max32002/bakudaifont/blob/f1eb195cfd665d95311f2fd720068ef5b1cf6115/README.md",
+    "license_text_source": "Original WOFF2 name table (nameID 13), preserved in bakudai-bold-OFL.txt",
+    "glyph_count": 24947,
+    "weight": 700,
+    "woff2_bytes": 8583820,
+    "original_metadata": {
+      "0": [
+        "AoyagiKouzan",
+        "莫大毛筆",
+        "青柳衡山"
+      ],
+      "1": [
+        "Bakudai",
+        "莫大毛筆-Bold",
+        "莫大毛筆フォント-Bold"
+      ],
+      "2": [
+        "Bold"
+      ],
+      "5": [
+        "Version 1.48"
+      ],
+      "14": [
+        "http://scripts.sil.org/OFL"
+      ]
+    }
+  },
+  {
+    "family": "masafont-regular",
+    "source": "https://raw.githubusercontent.com/max32002/masafont/8fa528cc22be3294af172634fc6ef70288d5f776/webfont/MasaFont-Regular.woff2",
+    "source_sha256": "3e0c3dc48d83c90234978d90687ccd9ab61416bafcde45a3187f83ba572ff13c",
+    "license": "OFL-1.1",
+    "license_url": "https://github.com/max32002/masafont/blob/8fa528cc22be3294af172634fc6ef70288d5f776/README.md",
+    "license_text_source": "Original WOFF2 name table (nameID 13), preserved in masafont-regular-OFL.txt",
+    "glyph_count": 24163,
+    "weight": 400,
+    "woff2_bytes": 6380692,
+    "original_metadata": {
+      "0": [
+        "KouzanAoyagi",
+        "青柳衡山"
+      ],
+      "1": [
+        "MasaFont",
+        "正風毛筆-Regular",
+        "正風毛筆フォント-Regular"
+      ],
+      "2": [
+        "Regular"
+      ],
+      "5": [
+        "Version 2.1 "
+      ],
+      "14": [
+        "http://scripts.sil.org/OFL"
+      ]
+    }
+  },
+  {
+    "family": "masafont-bold",
+    "source": "https://raw.githubusercontent.com/max32002/masafont/8fa528cc22be3294af172634fc6ef70288d5f776/webfont/MasaFont-Bold.woff2",
+    "source_sha256": "d789b4c23b8d1ea13e66e19a80d09bee3e008557d6ba320a506f5fc47572b2d9",
+    "license": "OFL-1.1",
+    "license_url": "https://github.com/max32002/masafont/blob/8fa528cc22be3294af172634fc6ef70288d5f776/README.md",
+    "license_text_source": "Original WOFF2 name table (nameID 13), preserved in masafont-bold-OFL.txt",
+    "glyph_count": 24163,
+    "weight": 700,
+    "woff2_bytes": 7541812,
+    "original_metadata": {
+      "0": [
+        "KouzanAoyagi",
+        "青柳衡山"
+      ],
+      "1": [
+        "MasaFont",
+        "正風毛筆-Bold",
+        "正風毛筆フォント-Bold"
+      ],
+      "2": [
+        "Bold"
+      ],
+      "5": [
+        "Version 2.1 "
+      ],
+      "14": [
+        "http://scripts.sil.org/OFL"
+      ]
+    }
   }
 ]

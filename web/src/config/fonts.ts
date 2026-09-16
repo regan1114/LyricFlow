@@ -84,6 +84,34 @@ export const bundledFonts: BundledFont[] = [
     weight: '400',
     preview: '行楷筆意',
   },
+  {
+    label: '莫大毛筆・標準',
+    value: 'Signal Bakudai Regular',
+    file: 'bakudai-regular',
+    weight: '400',
+    preview: '厚實筆韻',
+  },
+  {
+    label: '莫大毛筆・粗體',
+    value: 'Signal Bakudai Bold',
+    file: 'bakudai-bold',
+    weight: '700',
+    preview: '濃墨厚筆',
+  },
+  {
+    label: '正風毛筆・標準',
+    value: 'Signal Masa Font Regular',
+    file: 'masafont-regular',
+    weight: '400',
+    preview: '行書流韻',
+  },
+  {
+    label: '正風毛筆・粗體',
+    value: 'Signal Masa Font Bold',
+    file: 'masafont-bold',
+    weight: '700',
+    preview: '豪放行書',
+  },
 ];
 
 const fontRequests = new Map<string, Promise<void>>();
