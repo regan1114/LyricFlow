@@ -54,7 +54,7 @@ def main():
                 assert job["status"] == "done", job["message"]
                 path, _ = service.resource(job["id"], "srt")
                 path.read_text(encoding="utf-8-sig")
-                response = app.test_client().get(job["srt_url"], base_url="http://127.0.0.1:8765")
+                response = app.test_client().get(job["srt_url"], base_url="http://127.0.0.1:8080")
                 try:
                     assert response.status_code == 200
                     assert "attachment" in response.headers["Content-Disposition"]

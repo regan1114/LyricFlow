@@ -135,48 +135,75 @@ test('style apply and undo preserve content; custom styles survive reload', asyn
     true,
   );
 });
-test('custom export produces requested dimensions and ends at the selected range', async ({
-  page,
-}) => {
-  await page.goto('/');
-  await hover(page);
-  await page.locator('input[aria-label="匯入音訊"]').setInputFiles(audioFixture());
-  await expect(page.getByRole('button', { name: '播放', exact: true })).toBeEnabled();
-  await page.getByText('匯出設定', { exact: true }).click();
-  await page.getByLabel('匯出解析度').selectOption('720');
-  await page.getByLabel('匯出幀率').selectOption('30');
-  await page.getByLabel('匯出畫質').selectOption('4');
-  await page.getByLabel('匯出範圍').selectOption('custom');
-  await page.getByLabel('匯出開始秒數').fill('1');
-  await page.getByLabel('匯出結束秒數').fill('3');
-  const downloadPromise = page.waitForEvent('download');
-  await page.getByRole('button', { name: '開始錄影', exact: true }).click();
-  const download = await downloadPromise;
-  const data = await fs.readFile((await download.path())!);
-  expect(data.length).toBeGreaterThan(1000);
-  const result = await page.evaluate(async (base64) => {
-    const video = document.createElement('video');
-    const url = URL.createObjectURL(
-      new Blob([Uint8Array.from(atob(base64), (value) => value.charCodeAt(0))]),
-    );
-    try {
-      await new Promise<void>((resolve, reject) => {
-        video.onloadedmetadata = () => resolve();
-        video.onerror = () => reject(new Error('invalid video'));
-        video.src = url;
+for (const storage of ['file', 'memory'] as const) {
+  test(`${storage} export produces requested dimensions and ends at the selected range`, async ({
+    page,
+  }) => {
+    await page.addInitScript((storage) => {
+      Object.defineProperty(window, 'showSaveFilePicker', {
+        configurable: true,
+        value:
+          storage === 'memory'
+            ? undefined
+            : async () => {
+                // Replace only the native dialog; use a real browser-backed writable file.
+                const root = await navigator.storage.getDirectory();
+                return root.getFileHandle('recording-test-output', { create: true });
+              },
       });
-      return { width: video.videoWidth, height: video.videoHeight, duration: video.duration };
-    } finally {
-      video.removeAttribute('src');
-      video.load();
-      URL.revokeObjectURL(url);
+    }, storage);
+    await page.goto('/');
+    await hover(page);
+    await page.locator('input[aria-label="匯入音訊"]').setInputFiles(audioFixture());
+    await expect(page.getByRole('button', { name: '播放', exact: true })).toBeEnabled();
+    await page.getByText('匯出設定', { exact: true }).click();
+    await page.getByLabel('匯出解析度').selectOption('720');
+    await page.getByLabel('匯出幀率').selectOption('30');
+    await page.getByLabel('匯出畫質').selectOption('4');
+    await page.getByLabel('匯出範圍').selectOption('custom');
+    await page.getByLabel('匯出開始秒數').fill('1');
+    await page.getByLabel('匯出結束秒數').fill('3');
+    const downloadPromise = storage === 'memory' ? page.waitForEvent('download') : null;
+    await page.getByRole('button', { name: '開始錄影', exact: true }).click();
+    await expect(page.getByRole('button', { name: '停止錄影並匯出', exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: '開始錄影', exact: true })).toBeEnabled();
+    const download = await downloadPromise;
+    const data = download
+      ? await fs.readFile((await download.path())!)
+      : Buffer.from(
+          await page.evaluate(async () => {
+            const root = await navigator.storage.getDirectory();
+            const handle = await root.getFileHandle('recording-test-output');
+            const bytes = Array.from(new Uint8Array(await (await handle.getFile()).arrayBuffer()));
+            await root.removeEntry('recording-test-output');
+            return bytes;
+          }),
+        );
+    expect(data.length).toBeGreaterThan(1000);
+    const result = await page.evaluate(async (base64) => {
+      const video = document.createElement('video');
+      const url = URL.createObjectURL(
+        new Blob([Uint8Array.from(atob(base64), (value) => value.charCodeAt(0))]),
+      );
+      try {
+        await new Promise<void>((resolve, reject) => {
+          video.onloadedmetadata = () => resolve();
+          video.onerror = () => reject(new Error('invalid video'));
+          video.src = url;
+        });
+        return { width: video.videoWidth, height: video.videoHeight, duration: video.duration };
+      } finally {
+        video.removeAttribute('src');
+        video.load();
+        URL.revokeObjectURL(url);
+      }
+    }, data.toString('base64'));
+    expect(result.width).toBe(1280);
+    expect(result.height).toBe(720);
+    if (Number.isFinite(result.duration)) {
+      expect(result.duration).toBeGreaterThan(1);
+      expect(result.duration).toBeLessThan(3.5);
     }
-  }, data.toString('base64'));
-  expect(result.width).toBe(1280);
-  expect(result.height).toBe(720);
-  if (Number.isFinite(result.duration)) {
-    expect(result.duration).toBeGreaterThan(1);
-    expect(result.duration).toBeLessThan(3.5);
-  }
-  await expect(page.getByRole('button', { name: '開始錄影', exact: true })).toBeEnabled();
-});
+    await expect(page.getByRole('button', { name: '開始錄影', exact: true })).toBeEnabled();
+  });
+}

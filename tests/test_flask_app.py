@@ -11,7 +11,7 @@ from lyricflow.config import Settings
 from lyricflow.factory import create_app
 
 ROOT = Path(__file__).resolve().parent.parent
-BASE = "http://127.0.0.1:8765"
+BASE = "http://127.0.0.1:8080"
 
 
 class FlaskApplicationTests(unittest.TestCase):

@@ -9,7 +9,7 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 ROOT = Path(__file__).resolve().parent.parent
-BASE = os.environ.get("LYRIC_FLOW_TEST_URL", "http://127.0.0.1:8765")
+BASE = os.environ.get("LYRIC_FLOW_TEST_URL", "http://127.0.0.1:8080")
 SERVER = urlparse(BASE)
 JOBS_DIRECTORY = Path(os.environ.get("LYRIC_FLOW_TEST_JOBS", str(ROOT / ".cache/interface")))
 FIXTURES_DIRECTORY = Path(os.environ.get("LYRIC_FLOW_TEST_FIXTURES", str(ROOT / "tests/fixtures")))

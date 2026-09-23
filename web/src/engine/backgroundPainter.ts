@@ -11,13 +11,10 @@ export function createBackgroundPainter(
       return null;
     }
     if (media.type === 'image') {
-      const image = resources.imageCache.current[media.url] || media.element;
+      const image = media.element;
       return image?.complete && image.width > 0 ? image : null;
     }
-    const video = resources.videoRefs.current[media.url] || media.element;
-    if (!video) {
-      return null;
-    }
+    const video = media.element;
     const cache = resources.cacheCanvases.current;
     const cachedFrame = (cache[media.url] ??= document.createElement('canvas'));
     if (video.readyState < 2 || video.videoWidth === 0) {

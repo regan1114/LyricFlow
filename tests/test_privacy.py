@@ -12,7 +12,7 @@ from lyricflow.factory import create_app
 from lyricflow.job_store import JobStore
 from lyricflow.validation import parse_job_input
 
-BASE = "http://127.0.0.1:8765"
+BASE = "http://127.0.0.1:8080"
 
 
 class PrivacyTests(unittest.TestCase):
@@ -38,7 +38,7 @@ class PrivacyTests(unittest.TestCase):
                     )
                     self.assertNotIn("Access-Control-Allow-Origin", response.headers)
                 self.assertEqual(
-                    client.get("/api/health", base_url="http://evil.example:8765").status_code, 403
+                    client.get("/api/health", base_url="http://evil.example:8080").status_code, 403
                 )
                 for origin in ["null", "https://evil.example", "http://localhost:9999"]:
                     self.assertEqual(

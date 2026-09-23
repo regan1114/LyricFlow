@@ -6,11 +6,11 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'http://127.0.0.1:8765',
+        target: 'http://127.0.0.1:8080',
         changeOrigin: true,
         configure(proxy) {
           proxy.on('proxyReq', (request) => {
-            request.setHeader('Origin', 'http://127.0.0.1:8765');
+            request.setHeader('Origin', 'http://127.0.0.1:8080');
           });
         },
       },

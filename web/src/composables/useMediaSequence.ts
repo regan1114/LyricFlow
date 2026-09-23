@@ -202,6 +202,19 @@ export function useMediaSequence(
     state.current.timelineVisual = null;
     state.current.autoImageElapsed = 0;
   }
+  // Used only by the JSON importer after every image and subtitle has been validated.
+  function applyImageSubtitleArrangement(nextAssets: SequenceAsset[], visualClips: MediaClip[]) {
+    player.pause();
+    cancel();
+    visualMode.value = 'manual';
+    assets.value = [...assets.value, ...nextAssets];
+    clips.value = [...clips.value.filter((clip) => clip.track !== 'V1'), ...visualClips];
+    selectedId.value = null;
+    past.value = [];
+    future.value = [];
+    state.current.timelineVisual = null;
+    state.current.autoImageElapsed = 0;
+  }
   function importFiles(files: File[], kind: 'audio' | 'visual') {
     busy.value++;
     queue = queue
@@ -375,10 +388,11 @@ export function useMediaSequence(
     let active: MediaClip | undefined;
     if (!visualLocked.value) {
       for (const clip of clips.value) {
+        const end = clip.start + clip.duration;
         if (
           clip.track === 'V1' &&
           time >= clip.start &&
-          time < clip.start + clip.duration &&
+          (time < end || (time === duration.value && time === end)) &&
           (!active || clip.start > active.start)
         )
           active = clip;
@@ -440,6 +454,7 @@ export function useMediaSequence(
     release,
     decode,
     replaceProject,
+    applyImageSubtitleArrangement,
     visualMode,
     visualLocked,
     setVisualMode,

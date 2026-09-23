@@ -3,8 +3,8 @@ import { emissionCount } from '../animation';
 import type { RenderFrame } from '../frame';
 import type { RenderRuntime } from '../renderer';
 export function drawProgress(frame: RenderFrame, runtime: RenderRuntime) {
-  const { audioRef, progressBarRef, isDraggingRef, context, progressParticles } = runtime;
-  const audioDuration = runtime.stateRef.current.timelineDuration ?? audioRef.current?.duration;
+  const { progressBarRef, isDraggingRef, context, progressParticles } = runtime;
+  const audioDuration = runtime.stateRef.current.timelineDuration;
   const duration = !audioDuration || isNaN(audioDuration) ? 0 : audioDuration;
   if (progressBarRef.current && !isDraggingRef.current && duration > 0) {
     progressBarRef.current.value = String(frame.currentTime);

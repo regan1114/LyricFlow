@@ -10,7 +10,7 @@
 .venv/bin/python app.py
 ```
 
-服務網址為 `http://127.0.0.1:8765`。加上 `--open` 可自動開啟瀏覽器，網頁與 API 共用同一個服務。
+服務網址為 `http://127.0.0.1:8080`。加上 `--open` 可自動開啟瀏覽器，網頁與 API 共用同一個服務。
 預設只接受這台電腦的連線，未開放其他電腦或不同來源的瀏覽器頁面直接呼叫。
 
 ## 一次請求，直接取得 SRT
@@ -20,7 +20,7 @@
 
 ```sh
 curl --fail --show-error --max-time 1800 \
-  'http://127.0.0.1:8765/api/align?wait=true' \
+  'http://127.0.0.1:8080/api/align?wait=true' \
   -F 'audio=@歌曲.wav' \
   -F 'lyrics=@lyric.txt' \
   -F 'threads=2' \
@@ -41,7 +41,7 @@ curl --fail --show-error --max-time 1800 \
 3. `status` 為 `done` 後，`GET /api/jobs/{id}/srt`：取得 SRT。
 
 ```sh
-curl --fail --show-error 'http://127.0.0.1:8765/api/align' \
+curl --fail --show-error 'http://127.0.0.1:8080/api/align' \
   -F 'audio=@歌曲.wav' \
   -F 'lyrics=@lyric.txt'
 ```
@@ -86,7 +86,7 @@ curl --fail --show-error 'http://127.0.0.1:8765/api/align' \
 對已完成的工作送出 JSON `{}`，會沿用它的歌詞、音檔、執行緒與已定位時間：
 
 ```sh
-curl --fail --show-error 'http://127.0.0.1:8765/api/jobs/工作編號/retry' \
+curl --fail --show-error 'http://127.0.0.1:8080/api/jobs/工作編號/retry' \
   -H 'Content-Type: application/json' --data '{}'
 ```
 
@@ -112,7 +112,7 @@ curl --fail --show-error 'http://127.0.0.1:8765/api/jobs/工作編號/retry' \
 from pathlib import Path
 from lyric_flow_client import LyricFlowClient
 
-client = LyricFlowClient("http://127.0.0.1:8765")
+client = LyricFlowClient("http://127.0.0.1:8080")
 lyrics = Path("lyric.txt").read_text(encoding="utf-8-sig")
 
 srt = client.align(

@@ -23,7 +23,7 @@ def engine_path(root=PROJECT_ROOT):
 @dataclass(frozen=True)
 class Settings:
     root: Path = PROJECT_ROOT
-    port: int = 8765
+    port: int = 8080
     jobs_directory: Optional[Path] = None
 
     @property

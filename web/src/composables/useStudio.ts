@@ -11,8 +11,10 @@ import { useAutoRecognition } from './useAutoRecognition';
 import { useLyrics } from './useLyrics';
 import { useSubtitleEditor } from './useSubtitleEditor';
 import { useMediaSequence } from './useMediaSequence';
+import { useImageSubtitleImport } from './useImageSubtitleImport';
 import { ensureFontLoaded } from '../config/fonts';
 import { sceneDefinitions, createSceneSettings, isLandscapeId } from '../config/scenes';
+import { createImageRhythm } from '../domain/autoImages';
 
 export function createStudio() {
   const settings = reactive(createSettings());
@@ -122,6 +124,25 @@ export function createStudio() {
     ),
   );
 
+  const imageSubtitleImport = useImageSubtitleImport({
+    sequence,
+    player,
+    busy: projectBusy,
+    blocked: () => recognitionBusy.value || recording.isRecording.value || lyrics.isSyncing.value,
+    subtitleLocked: () => subtitleEditor.locked.value,
+    commit: (assets, clips, subtitles, filename) => {
+      subtitleRequest++;
+      lyrics.cancel();
+      sequence.applyImageSubtitleArrangement(assets, clips);
+      lyrics.raw.value = subtitles;
+      subtitleFilename.value = filename;
+      subtitleSourceRevision.value++;
+      subtitleEditor.resetHistory();
+      mediaTab.value = 'assets';
+    },
+    reportError,
+  });
+
   const activeBackgrounds = computed(() => {
     if (!sequence.visualLocked.value) return media.backgrounds.value;
     const images = sequence.assets.value.flatMap((asset) =>
@@ -132,6 +153,12 @@ export function createStudio() {
       ? images.sort((first, second) => first.id.localeCompare(second.id))
       : images;
   });
+  const imageRhythm = computed(() =>
+    createImageRhythm(
+      lyrics.cues.value.map((cue) => cue.time),
+      Math.max(0, ...lyrics.cues.value.map((cue) => cue.endTime)),
+    ),
+  );
   watchEffect(() => {
     Object.assign(renderState.current, settings, {
       sceneSettings: { ...sceneSettings },
@@ -139,17 +166,12 @@ export function createStudio() {
       bgList: activeBackgrounds.value,
       visualArrangementMode: sequence.visualMode.value,
       parsedLyrics: lyrics.cues.value,
+      imageRhythm: imageRhythm.value,
       rawLyrics: lyrics.raw.value,
       logoType: media.layers.value.logo?.type ?? null,
       coreMediaType: media.layers.value.core?.type ?? null,
     });
   });
-  watch(
-    () => media.audio.value?.url,
-    (url) => {
-      if (url) player.load(url);
-    },
-  );
   watch(activeBackgrounds, (backgrounds, previous) => {
     if (
       backgrounds.length === previous.length &&
@@ -161,8 +183,6 @@ export function createStudio() {
       currentBgIndex: 0,
       nextBgIndex: 0,
       isBgTransitioning: false,
-      randomBgQueue: [],
-      lastBgSwitchTime: renderState.current.trueTime,
       currentBgStartTime: renderState.current.trueTime,
     });
   });
@@ -262,6 +282,7 @@ export function createStudio() {
     subtitleEditor,
     recording,
     importFiles,
+    imageSubtitleImport,
   };
 }
 

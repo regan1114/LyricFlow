@@ -52,6 +52,18 @@ function project(): ProjectData {
   };
 }
 describe('portable project format', () => {
+  it('opens older settings with retired slideshow fields without changing the timeline', () => {
+    const data = project().manifest;
+    const restored = validateManifest(
+      {
+        ...data,
+        settings: { ...data.settings, videoSpeed: 0.75, videoTransitionMode: 'strict' },
+      },
+      2,
+    );
+    expect(restored.settings).toEqual(data.settings);
+    expect(restored.clips).toEqual(data.clips);
+  });
   it('round trips original file bytes, names, metadata, timeline and lyrics without external URLs', async () => {
     const original = project();
     const restored = await unpackProject(packProject(original));

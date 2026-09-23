@@ -27,7 +27,6 @@ const uploads: { kind: LayerKind; label: string; accept: string }[] = [
   { kind: 'core', label: '光核圖示', accept: 'image/*,video/*' },
 ];
 function visible(field: { key: string }) {
-  if (['videoTransitionMode', 'videoSpeed'].includes(field.key)) return false;
   if (autoFields.includes(field.key))
     return (
       visualLocked.value &&
@@ -67,7 +66,7 @@ const selectedFont = computed(() =>
       aria-controls="settings-content"
       @click="expanded = !expanded"
     >
-      <SlidersHorizontal :size="17" /><span>Resonance Dashboard</span
+      <SlidersHorizontal :size="17" /><span>作品設定</span
       ><ChevronDown
         :size="16"
         :class="{ collapsed: !expanded }"
@@ -116,8 +115,8 @@ const selectedFont = computed(() =>
           <p>
             {{
               visualLocked
-                ? '自動使用素材區內的所有圖片，影片不參與。畫面軌道已鎖定。'
-                : '將圖片與影片加入時間軸，自行調整順序與長度。切換自動模式會清空畫面軌道，素材仍保留。'
+                ? '使用所有圖片輪播，畫面軌道已鎖定。'
+                : '圖片與影片可自由編排。切換自動模式會清空畫面軌道，素材仍保留。'
             }}
           </p>
           <span
@@ -130,13 +129,7 @@ const selectedFont = computed(() =>
                 : '請先匯入圖片素材'
             }}</span
           >
-          <p v-if="visualLocked">
-            播放、暫停或拖曳時間軸不影響輪播。{{
-              settings.bgSwitchTrigger === 'lyric'
-                ? '依歌詞模式會重複使用字幕時間間距，作為獨立換頁節奏；沒有可用節奏時依輪播間隔切換。'
-                : ''
-            }}
-          </p>
+          <p v-if="visualLocked">輪播獨立計時，不隨播放或拖曳定位；依歌詞模式會循環字幕間距。</p>
         </div>
         <div
           v-if="group.id === 'visual'"

@@ -53,7 +53,7 @@ def stop_server(signum, frame):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--port", type=int, default=8765)
+    parser.add_argument("--port", type=int, default=8080)
     parser.add_argument("--open", action="store_true")
     parser.add_argument("--jobs-dir", type=Path, help="工作資料夾，預設為 .cache/interface")
     args = parser.parse_args()

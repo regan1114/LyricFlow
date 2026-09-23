@@ -9,6 +9,11 @@ import {
   type ExportSettings,
 } from '../config/export';
 import { RecordingBuffer } from '../services/recordingBuffer';
+import {
+  canStreamRecording,
+  openRecordingFile,
+  type RecordingFile,
+} from '../services/recordingFile';
 import type { StudioSettings } from '../config/settings';
 import type { RenderResources, RenderState, Slot } from '../engine/resources';
 import type { AudioPlayer } from './useAudioPlayer';
@@ -19,7 +24,9 @@ interface RecordingSession {
   stream: MediaStream;
   destination: MediaStreamAudioDestinationNode;
   buffer: RecordingBuffer;
+  file: RecordingFile | null;
   save: boolean;
+  released: boolean;
   end: number;
   stopDrawing: () => void;
 }
@@ -36,11 +43,14 @@ export function useRecording(
   const status = ref<RecordingStatus>('idle');
   const isRecording = computed(() => status.value !== 'idle');
   const recordedBytes = ref(0);
+  const streamsToFile = canStreamRecording();
   let session: RecordingSession | null = null;
   let startRequest = 0;
   let disposed = false;
 
   function cleanup(current: RecordingSession) {
+    if (current.released) return;
+    current.released = true;
     current.stopDrawing();
     current.stream.getTracks().forEach((track) => track.stop());
     try {
@@ -61,12 +71,22 @@ export function useRecording(
     const cancelled = () => disposed || request !== startRequest;
     status.value = 'preparing';
     recordedBytes.value = 0;
+    let file: RecordingFile | null = null;
     try {
       const options = { ...exportSettings };
       const range = exportRange(options, player.duration.value);
       const canvas = resources.canvasRef.current;
       if (!window.MediaRecorder || !canvas?.captureStream)
         throw new Error('此瀏覽器不支援畫布錄影。');
+      const mimeType = recordingMime(options.format, (type) => MediaRecorder.isTypeSupported(type));
+      if (!mimeType) throw new Error('此瀏覽器不支援所選錄影格式，請改選自動或其他格式。');
+      const filename = `${settings.songName || 'Resonance'}.${mimeType.startsWith('video/mp4') ? 'mp4' : 'webm'}`;
+      file = await openRecordingFile(filename, mimeType, () => {
+        if (disposed || session?.file !== file) return;
+        reportError('錄影檔案寫入失敗，已停止錄影。請檢查儲存空間與檔案權限後重新錄製。');
+        stop();
+      });
+      if (cancelled()) return;
       if (settings.selectedFont !== 'custom') await ensureFontLoaded(settings.selectedFont);
       if (cancelled()) return;
       await player.initAudio();
@@ -80,19 +100,11 @@ export function useRecording(
         currentBgIndex: 0,
         nextBgIndex: 0,
         isBgTransitioning: false,
-        randomBgQueue: [],
-        lastActiveIdx: -1,
         smoothActiveIdx: 0,
         wallTime: 0,
         lastColorChangeTime: -16,
-        lastBgSwitchTime: renderState.current.trueTime,
         currentBgStartTime: renderState.current.trueTime,
       });
-      Object.values(resources.videoRefs.current).forEach((video) => {
-        video.currentTime = 0;
-      });
-      const mimeType = recordingMime(options.format, (type) => MediaRecorder.isTypeSupported(type));
-      if (!mimeType) throw new Error('此瀏覽器不支援所選錄影格式，請改選自動或其他格式。');
       const [width, height] = exportDimensions(canvas.width, canvas.height, options.resolution);
       let output = canvas;
       let drawingFrame: number | undefined;
@@ -143,27 +155,43 @@ export function useRecording(
         stream,
         destination,
         buffer: new RecordingBuffer(),
+        file,
         save: true,
+        released: false,
         end: range.end,
         stopDrawing,
       };
       session = current;
-      const filename = `${settings.songName || 'Resonance'}.${mimeType.startsWith('video/mp4') ? 'mp4' : 'webm'}`;
       recorder.ondataavailable = (event) => {
         if (disposed || session !== current) return;
-        const full = current.buffer.append(event.data);
-        recordedBytes.value = current.buffer.bytes;
+        const storage = current.file || current.buffer;
+        const full = storage.append(event.data);
+        recordedBytes.value = storage.bytes;
         if (full && status.value === 'recording') {
-          reportError('錄影已達 256 MiB 暫存上限，已停止並匯出目前片段。');
+          reportError(
+            current.file
+              ? '磁碟寫入速度不足，待寫入資料已達 256 MiB，正在停止並保存目前片段。'
+              : '此瀏覽器使用記憶體暫存，錄影已達 256 MiB，正在停止並匯出目前片段。長影片請使用支援直接存檔的 Chrome／Edge。',
+          );
           stop();
         }
       };
-      recorder.onstop = () => {
+      recorder.onstop = async () => {
         try {
-          const blob = current.buffer.take(mimeType);
-          if (!disposed && current.save && blob) downloadBlob(blob, filename);
+          if (current.file) {
+            if (!disposed && current.save) await current.file.finish();
+            else await current.file.abort();
+          } else {
+            const blob = current.buffer.take(mimeType);
+            if (!disposed && current.save && blob) downloadBlob(blob, filename);
+          }
         } catch {
-          reportError('無法下載錄影片段，請檢查瀏覽器的下載權限。');
+          if (!disposed)
+            reportError(
+              current.file
+                ? '無法完成錄影存檔，請檢查儲存空間與檔案權限後重新錄製。'
+                : '無法下載錄影片段，請檢查瀏覽器的下載權限。',
+            );
         } finally {
           cleanup(current);
         }
@@ -183,7 +211,11 @@ export function useRecording(
         else cleanup(session);
       } else status.value = 'idle';
       player.pause();
-      reportError(error instanceof Error ? error.message : '無法開始錄影。');
+      if (!(error instanceof Error && error.name === 'AbortError'))
+        reportError(error instanceof Error ? error.message : '無法開始錄影。');
+    } finally {
+      // Preparation may be cancelled before a recorder owns the selected output file.
+      if (file && session?.file !== file) await file.abort().catch(() => {});
     }
   }
 
@@ -205,8 +237,9 @@ export function useRecording(
       session.recorder.onstop = null;
       session.recorder.ondataavailable = null;
       session.recorder.onerror = null;
+      void session.file?.abort().catch(() => {});
       cleanup(session);
     }
   });
-  return { isRecording, status, recordedBytes, start, stop };
+  return { isRecording, status, recordedBytes, streamsToFile, start, stop };
 }

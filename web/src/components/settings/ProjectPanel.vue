@@ -68,7 +68,7 @@ function removeStyle() {
             @select="project.open($event[0])"
           />
         </div>
-        <p>專案包含素材、字幕與設定。開啟檔案會替換目前作品。</p>
+        <p>開啟專案會替換目前的素材、字幕與設定。</p>
         <p
           v-if="project.message.value"
           role="status"
@@ -135,9 +135,7 @@ function removeStyle() {
               刪除草稿
             </button>
           </div>
-          <p>
-            草稿只存在此瀏覽器，重新開啟時可選擇恢復。離開前請確認已儲存；重要作品請另下載專案備份。清除網站資料會一併刪除草稿。
-          </p>
+          <p>草稿儲存在此瀏覽器，清除網站資料會刪除草稿。長期保存請下載專案。</p>
         </div>
       </div>
     </details>
@@ -197,9 +195,7 @@ function removeStyle() {
             刪除收藏
           </button>
         </div>
-        <p>
-          套用配色、字型、場景與特效。自動圖片與時間軸素材仍優先顯示；場景可在手動模式的畫面空檔看見。
-        </p>
+        <p>內建場景會在手動時間軸的畫面空檔顯示。</p>
         <label
           >收藏名稱<input
             v-model="name"
@@ -216,7 +212,7 @@ function removeStyle() {
         >
           收藏目前風格
         </button>
-        <p>收藏保存在這個瀏覽器；Logo 與自訂背景素材由專案檔保存。</p>
+        <p>收藏僅儲存風格；圖片與 Logo 請用專案保存。</p>
       </div>
     </details>
     <details>
@@ -304,16 +300,16 @@ function removeStyle() {
           {{ (bytes / 1024 / 1024).toFixed(1) }} MiB
         </p>
         <p
-          v-if="bytes >= MAX_RECORDING_BYTES"
+          v-if="!recording.streamsToFile && bytes >= MAX_RECORDING_BYTES"
           class="export-warning"
           role="status"
         >
-          預估超過 256 MiB 上限，可能無法完整錄製。請降低畫質或縮短區段。
+          預估超過 256 MiB 暫存上限。請改用支援直接存檔的 Chrome／Edge，或降低畫質、縮短區段。
         </p>
-        <p>
-          按播放器的錄影鍵開始即時錄製。格式依瀏覽器支援，容量僅供估算；達 256 MiB
-          會停止並保存已錄片段。
+        <p v-if="recording.streamsToFile">
+          按錄影鍵選擇儲存位置，影片會直接寫入檔案。停止後請等待存檔完成。
         </p>
+        <p v-else>按錄影鍵開始，結束後下載影片。暫存達 256 MiB 時會停止並匯出。</p>
       </fieldset>
     </details>
   </div>

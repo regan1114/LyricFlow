@@ -21,7 +21,7 @@ Please visit **[考拉醬 | 謎謎之音 on YouTube](https://www.youtube.com/@me
 
 | Feature                                   | Vercel online edition                                        | Local edition (Vue + Python)                    |
 | ----------------------------------------- | ------------------------------------------------------------ | ----------------------------------------------- |
-| Access                                    | [Open in your browser](https://lyric-flow-seven.vercel.app/) | Install and open `http://127.0.0.1:8765`        |
+| Access                                    | [Open in your browser](https://lyric-flow-seven.vercel.app/) | Install and open `http://127.0.0.1:8080`        |
 | Media import, subtitles and manual timing | Available                                                    | Available                                       |
 | Visualization, scenes and video export    | Available, subject to browser support                        | Available, subject to browser support           |
 | Project downloads and browser drafts      | Available                                                    | Available                                       |
@@ -34,6 +34,7 @@ The online edition edits, previews and exports your media in the browser, withou
 
 - **Media timeline:** import audio, images and video; arrange, move, trim, split and duplicate clips; adjust audio levels.
 - **Subtitle editing:** import SRT, LRC or TXT; type or paste lyrics, search and replace text, and adjust cue boundaries.
+- **Image and lyric alignment:** import images, then load a JSON file containing filenames, timestamps and lyrics to create subtitles and continuous visuals covering the intro, instrumental gaps and outro.
 - **Marquee selection:** drag across empty subtitle-track space to select multiple cues, then move, duplicate or delete them together, with undo and redo.
 - **Manual lyric timing:** mark each line while listening, undo a mark, insert an empty timestamp and export subtitles.
 - **Music visualization:** spectrum and waveform displays, orb and vinyl modes, transitions, atmosphere effects and built-in scenes.
@@ -54,7 +55,58 @@ See the [Web frontend guide](web/README.md) for detailed controls (Traditional C
 
 During manual timing, Space or Right Arrow marks the current line, Left Arrow undoes a mark, `0` inserts an empty timestamp, and Enter finishes. On-screen buttons provide the same actions. Cancelling preserves the original subtitles.
 
-Video export records in real time. Available formats and performance depend on the browser. At approximately 256 MiB of buffered recording data, recording stops and saves the captured portion; reduce quality or export a shorter range for larger projects.
+Video export records in real time. Browsers that support saving directly to a file, such as desktop Chrome and Edge, ask for a save location before recording and write chunks to disk as they arrive, allowing videos larger than 256 MiB. Wait for saving to finish after stopping. Other browsers still use a 256 MiB memory buffer and stop to download the captured portion when it fills. Available formats and performance depend on the browser.
+
+## Create assets from a song folder
+
+Create one folder per song with one audio file and one UTF-8 TXT file containing the complete lyrics. You can use the following location (create it if missing) or provide another local folder:
+
+```text
+input/我的歌曲/
+  song.mp3
+  lyrics.txt
+  專輯名稱.txt       # Optional; use this exact filename and a single-line album title
+```
+
+Audio and lyric filenames are otherwise unrestricted. Suno markers such as `[Verse]` and `[Chorus]` may remain, but write out repeated choruses in full. Ask Codex or another AI:
+
+> Read this project's AGENTS.md and WORKFLOW.md, then process input/我的歌曲. Produce a complete SRT, individual storyboard images, a JSON file aligning lyrics with image filenames, and an album cover bearing its title. If output already exists, verify the sources and progress before resuming.
+
+The AI starts this workflow when instructed; adding files does not trigger it automatically. It needs access to the folder, the local alignment service or CLI, and image generation and inspection tools. See the local installation instructions below. The Python helpers validate inputs and export subtitles/JSON; the AI's image tools generate the artwork.
+
+Defaults are **16:9 storyboard images with consistent characters and style, no text, and room for subtitles**, plus a **square 1:1 cover bearing the album title**. Specify a style, image count, aspect ratio or title in your request if desired. Otherwise, the AI chooses a title from the lyrics. Results go into the song folder's `output/`:
+
+| Output                                                    | Purpose                                                                                         |
+| --------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| `lyrics.srt`                                              | Complete lyrics and cue times, also usable in other editors                                     |
+| `images/`                                                 | Individual storyboard image files                                                               |
+| `image-subtitles.json`                                    | Matches image filenames through `name` and imports subtitles and visuals together               |
+| `cover/album-cover.png`, `album.md`                       | Album cover, title and naming rationale; the cover is not automatically inserted into the video |
+| `storyboard.md`, `storyboard.json`, `prompts.md`          | Storyboard, image change points and generation prompts                                          |
+| `source.json`, `PROGRESS.md`, alignment and lyric records | Sources, user requirements, progress and handoff records                                        |
+
+[AGENTS.md](AGENTS.md) is the AI entry point; [WORKFLOW.md](WORKFLOW.md) defines the complete process, deliverables and acceptance checks (Traditional Chinese). Each song's `output/PROGRESS.md` records its actual progress. A replacement AI should read these files and verify `source.json` and existing outputs before resuming. `input/` and `output/` are excluded from Git; back them up or share them separately when handing off work.
+
+## Import image and lyric JSON
+
+Both editions can import prepared image JSON:
+
+1. Import the original song and check that it is on an audio track with the correct duration.
+2. Add the files in `images/` through **歌詞編輯 → 素材**, preserving filenames and avoiding duplicate asset names.
+3. Use **匯入圖片字幕 JSON** to open `image-subtitles.json`. This switches to manual timeline mode and replaces V1 visuals and all subtitles, preserving audio, assets and styles. A separate SRT import is unnecessary.
+4. Preview the subtitles and image changes, then record using the normal export controls.
+
+Use `version: 1` and include `name`, `startTime`, `endTime` and `content` in each scene. `name` must match a unique imported image filename exactly, including its extension and letter case. No `image` field or Base64 data is required. Times are absolute seconds within the song; each cue must last at least 0.05 seconds, cues cannot overlap, and `content` must contain nonblank lyrics. Limits are **64 MiB and 1–500 scenes**. Multiple cues may share an image.
+
+The first image starts at zero, each image continues until the next scene starts, and the final image extends to the end of the existing audio tracks or final subtitle, whichever is later. Instrumental gaps need no blank subtitle scenes. If an error reports blank `content`, check that scene and restore its missing lyrics. After extending the audio track, reimport the JSON or extend the final image clip manually.
+
+Validation failures preserve the current project. Download the [example JSON](web/public/examples/image-subtitles.json); see the [format guide](web/public/examples/image-subtitles.md) for field details and legacy compatibility.
+
+## Common visual settings
+
+- **Images zooming with the music:** set **作品設定 → 畫面與背景 → 背景律動** to `0`. If the whole-screen impact effect is enabled, also disable **氛圍特效 → 節奏鏡頭衝擊**.
+- **Logo:** new projects load the bundled `web/public/logo.png` at the bottom-right corner with `20%` size. Adjust, replace or clear it under **Logo 與疊圖**. Opening a project or restoring a draft retains its saved content.
+- **Synchronizing images to lyrics:** automatic image sequencing uses an independent clock; playback, pause and seeking do not reset it. Its lyric mode uses cue intervals as a repeating rhythm. For fixed lyric-to-image matches, use JSON import or the manual timeline. Switching back to automatic sequencing clears V1 clips.
 
 ## Drafts, projects and reset
 
@@ -127,7 +179,7 @@ Setup verifies downloads, builds whisper.cpp and stores the engine and model in 
 .venv/bin/python app.py --open
 ```
 
-Open `http://127.0.0.1:8765`. Keep the terminal running while using the app; press Ctrl+C to stop it.
+Open `http://127.0.0.1:8080`. Keep the terminal running while using the app; press Ctrl+C to stop it.
 
 ### Windows
 
@@ -146,7 +198,9 @@ Native Windows support still needs device verification. Alternatively, use WSL2 
 4. Existing subtitles require replacement confirmation. Cancelling that confirmation preserves the input without submitting a job.
 5. Successful results replace the subtitles. Failed or cancelled recognition preserves the originals. Review and adjust the results in the timeline.
 
-Recognition and lyric matching primarily target Chinese. Sustained notes, instrumental breaks, repeated sections and strong accompaniment can affect alignment, so review the timing by listening. Missing-line retries and integrations are documented in the [API guide](API.md).
+Local recognition accepts WAV, MP3, M4A, AAC, FLAC and AIFF audio, up to **200 MiB and 30 minutes**. Lyrics are limited to **12,000 characters**; uploaded UTF-8 lyric text files are limited to **64 KiB**. These service limits are separate from image JSON and recording limits.
+
+Recognition and lyric matching primarily target Chinese. Sustained notes, instrumental breaks, repeated sections and strong accompaniment can affect alignment, so review the timing by listening. Unmatched lines are omitted from recognition SRT output. Check the unmatched and review counts, then retry or resolve the timing manually before assembling complete assets. Missing-line retries and integrations are documented in the [API guide](API.md).
 
 The CLI accepts PCM WAV audio and a lyrics text file:
 
@@ -169,7 +223,7 @@ npm ci
 npm run dev
 ```
 
-Development mode retains recognition and proxies `/api` to `http://127.0.0.1:8765`; start Python separately when using it. Rebuild with `npm run build` for the local edition or `npm run build:static` for the frontend-only edition.
+Development mode retains recognition and proxies `/api` to `http://127.0.0.1:8080`; start Python separately when using it. Rebuild with `npm run build` for the local edition or `npm run build:static` for the frontend-only edition.
 
 ```sh
 npm run format:check
@@ -190,15 +244,18 @@ Real recognition tests requiring external song fixtures and a model are skipped 
 
 ## Project layout and credits
 
-| Path                       | Purpose                                       |
-| -------------------------- | --------------------------------------------- |
-| `web/src/`                 | Vue 3 and TypeScript visual editor            |
-| `web/public/`              | Fonts, scenes and asset attribution           |
-| `web/vercel.json`          | Frontend-only Vercel deployment configuration |
-| `lyricflow/`               | Python API, recognition and lyric alignment   |
-| `app.py` / `lyric_flow.py` | Local web server / recognition CLI            |
-| `tests/` / `web/tests/`    | Backend / frontend and browser tests          |
-| `scripts/`                 | Setup and verification tools                  |
+| Path                        | Purpose                                                                 |
+| --------------------------- | ----------------------------------------------------------------------- |
+| `web/src/`                  | Vue 3 and TypeScript visual editor                                      |
+| `web/public/`               | Fonts, scenes and asset attribution                                     |
+| `web/vercel.json`           | Frontend-only Vercel deployment configuration                           |
+| `lyricflow/`                | Python API, recognition and lyric alignment                             |
+| `app.py` / `lyric_flow.py`  | Local web server / recognition CLI                                      |
+| `lyric_flow_client.py`      | Python client for the local recognition API                             |
+| `tests/` / `web/tests/`     | Backend / frontend and browser tests                                    |
+| `scripts/`                  | Setup, verification, song-folder preparation and storyboard export      |
+| `AGENTS.md` / `WORKFLOW.md` | AI entry point / song production and delivery specification             |
+| `input/` / `output/`        | Private songs and generated assets; create as needed, excluded from Git |
 
 Special thanks again to **[考拉醬 | 謎謎之音](https://www.youtube.com/@meme-koala)** for the Web visualization tool. Third-party code licenses are retained in [THIRD-PARTY-LICENSES](web/public/THIRD-PARTY-LICENSES). Font and scene licenses and attribution remain in [web/public/](web/public/).
 

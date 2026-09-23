@@ -145,7 +145,7 @@ class RetryApiTests(unittest.TestCase):
 
     def post(self, data):
         return self.client.post(
-            f"/api/jobs/{self.identity}/retry", json=data, base_url="http://127.0.0.1:8765"
+            f"/api/jobs/{self.identity}/retry", json=data, base_url="http://127.0.0.1:8080"
         )
 
     def test_retry_creates_separate_job_and_keeps_manual_edits(self):

@@ -2,6 +2,7 @@ import type { StudioSettings } from '../config/settings';
 import { createSceneSettings } from '../config/scenes';
 import type { VisualMedia } from '../composables/useMediaLibrary';
 import type { SubtitleCue } from '../domain/subtitles';
+import type { ImageRhythm } from '../domain/autoImages';
 import { TextBitmapCache } from './textBitmap';
 import type {
   ColorParticle,
@@ -29,13 +30,10 @@ const slot = <Value>(current: Value): Slot<Value> => ({ current });
 export function createRenderResources() {
   return {
     canvasRef: slot<HTMLCanvasElement | null>(null),
-    audioRef: slot<HTMLAudioElement | null>(null),
     audioContextRef: slot<AudioContext | null>(null),
     analyserRef: slot<AnalyserNode | null>(null),
     sourceRef: slot<AudioNode | null>(null),
     animationRef: slot<number | null>(null),
-    imageCache: slot<Record<string, HTMLImageElement>>({}),
-    videoRefs: slot<Record<string, HTMLVideoElement & { _playPending?: boolean }>>({}),
     cacheCanvases: slot<Record<string, HTMLCanvasElement>>({}),
     textCacheRef: slot(new TextBitmapCache()),
     frequencyDataRef: slot(new Uint8Array(256)),
@@ -93,9 +91,6 @@ export function createRenderState(settings: StudioSettings) {
     midIntensity: 0,
     time: 0,
     currentTime: 0,
-    lastActiveIdx: -1,
-    transitionStartTime: 0,
-    currentMotionEffect: 0,
     mouseX: 0,
     mouseY: 0,
     smoothMouseX: 0,
@@ -114,21 +109,19 @@ export function createRenderState(settings: StudioSettings) {
     bgList: [] as VisualMedia[],
     visualArrangementMode: 'auto' as 'manual' | 'auto',
     autoImageElapsed: 0,
-    timelineDuration: null as number | null,
+    imageRhythm: undefined as ImageRhythm | undefined,
+    timelineDuration: 0,
     timelineVisual: null as VisualMedia | null,
     currentBgIndex: 0,
     nextBgIndex: 0,
-    lastBgSwitchTime: null as number | null,
     currentBgStartTime: 0,
     isBgTransitioning: false,
     bgTransitionStart: 0,
-    randomBgQueue: [] as number[],
     logoType: null as 'image' | 'video' | null,
     coreMediaType: null as 'image' | 'video' | null,
     wallTime: 0,
     lastPerfTime: null as number | null,
     trueTime: 0,
-    smoothScrollY: 0,
     smoothActiveIdx: 0,
     vinylAngle: 0,
     vinylAngularVelocity: 0,

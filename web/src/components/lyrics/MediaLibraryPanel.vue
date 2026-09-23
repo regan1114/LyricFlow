@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useStudio } from '../../composables/useStudio';
 import FileUpload from '../ui/FileUpload.vue';
+import ImageSubtitleImport from './ImageSubtitleImport.vue';
 import { formatPlaybackTime } from '../../engine/time';
 import type { MediaClip, MediaTrack } from '../../domain/mediaSequence';
 const { sequence, player, importFiles, recording, reportError, subtitleFilename } = useStudio();
@@ -39,6 +40,7 @@ function edit(field: keyof MediaClip, event: Event) {
         @select="importFiles('subtitles', $event)"
       />
     </div>
+    <ImageSubtitleImport />
     <p class="caption-notice">
       {{
         sequence.busy.value

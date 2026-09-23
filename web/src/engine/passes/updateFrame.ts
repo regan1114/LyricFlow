@@ -4,8 +4,7 @@ import { frameStep, smoothingFactor } from '../animation';
 import type { RenderFrame } from '../frame';
 import type { RenderRuntime } from '../renderer';
 export function updateFrame(frame: RenderFrame, runtime: RenderRuntime) {
-  const { canvas, context, stateRef, audioRef, isDraggingRef, analyserRef, onThemeColorChange } =
-    runtime;
+  const { canvas, context, stateRef, analyserRef, onThemeColorChange } = runtime;
   frame.width = canvas.width;
   frame.height = canvas.height;
   context.setTransform(1, 0, 0, 1, 0, 0);
@@ -29,15 +28,12 @@ export function updateFrame(frame: RenderFrame, runtime: RenderRuntime) {
   frame.customFont = stateRef.current.customFont;
   frame.visualMode = stateRef.current.visualMode;
   frame.bgList = stateRef.current.bgList;
-  frame.bgPlayMode = stateRef.current.bgPlayMode;
   frame.bgSwitchTrigger = stateRef.current.bgSwitchTrigger;
   frame.bgInterval = stateRef.current.bgInterval;
-  frame.videoTransitionMode = stateRef.current.videoTransitionMode;
   frame.lyricsSize = stateRef.current.lyricsSize;
   frame.lyricsPosition = stateRef.current.lyricsPosition;
   frame.lyricsEffect = stateRef.current.lyricsEffect;
   frame.keywordsStr = stateRef.current.keywordsStr;
-  frame.videoSpeed = stateRef.current.videoSpeed;
   frame.showVignette = stateRef.current.showVignette;
   frame.showWaveform = stateRef.current.showWaveform;
   frame.visualSize = stateRef.current.visualSize;
@@ -69,11 +65,8 @@ export function updateFrame(frame: RenderFrame, runtime: RenderRuntime) {
   frame.ambientDriftMode = stateRef.current.ambientDriftMode;
   frame.showKaraokeBall = stateRef.current.showKaraokeBall;
   frame.playbackClock = stateRef.current.wallTime || 0;
-  if (frame.isPlaying && stateRef.current.timelineDuration !== null) {
+  if (frame.isPlaying) {
     frame.playbackClock = stateRef.current.currentTime;
-  } else if (frame.isPlaying && audioRef.current && !isDraggingRef.current) {
-    frame.playbackClock = audioRef.current.currentTime;
-    stateRef.current.currentTime = audioRef.current.currentTime;
   } else {
     frame.playbackClock += frame.deltaSeconds;
   }

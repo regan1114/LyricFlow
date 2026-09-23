@@ -56,6 +56,9 @@ async function importAudio(page: Page) {
 }
 
 test('preview, settings, playback, lyric sync and video export', async ({ page }) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(window, 'showSaveFilePicker', { value: undefined, configurable: true });
+  });
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
   await openStudio(page);
@@ -370,7 +373,7 @@ test('glass panels, hover visibility, effect shortcuts and no default background
   await page.keyboard.press('Tab');
   await expect(controls).toHaveCSS('opacity', '1');
   await page.keyboard.press('Tab');
-  await expect(page.getByRole('button', { name: 'Resonance Dashboard' })).toBeFocused();
+  await expect(page.getByRole('button', { name: '作品設定' })).toBeFocused();
   await page.getByLabel('歌曲名稱', { exact: true }).click();
   await page.mouse.move(0, 0);
   await expect(controls).toHaveCSS('opacity', '0');
@@ -589,6 +592,9 @@ test('lyrics and timeline panels resize, reset and retain sizes across layout to
 test('multiple visuals and audio assets share one sequence and one subtitle document', async ({
   page,
 }) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(window, 'showSaveFilePicker', { value: undefined, configurable: true });
+  });
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
   await openStudio(page);

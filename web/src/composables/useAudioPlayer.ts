@@ -17,7 +17,6 @@ export function useAudioPlayer(
   const duration = ref(0);
   const volume = ref(0.8);
   const isLoaded = ref(false);
-  const audio = new Audio();
   let playbackRequest = 0;
   let timeline: PlaybackTimeline | null = null;
   let stopSources: (() => void) | null = null;
@@ -51,44 +50,8 @@ export function useAudioPlayer(
     isLoaded.value = next.duration > 0;
     seek(Math.min(currentTime.value, next.duration));
   }
-  resources.audioRef.current = audio;
-  audio.volume = volume.value;
-  audio.preload = 'metadata';
-
-  const listeners = {
-    timeupdate: () => {
-      if (!timeline) currentTime.value = audio.currentTime;
-    },
-    loadedmetadata: () => {
-      if (timeline) return;
-      duration.value = Number.isFinite(audio.duration) ? audio.duration : 0;
-      isLoaded.value = duration.value > 0;
-    },
-    play: () => {
-      if (timeline) return;
-      isPlaying.value = true;
-      renderState.current.isPlaying = true;
-    },
-    pause: () => {
-      if (timeline) return;
-      isPlaying.value = false;
-      renderState.current.isPlaying = false;
-    },
-    ended: () => {
-      if (timeline) return;
-      isPlaying.value = false;
-      renderState.current.isPlaying = false;
-    },
-    error: () => {
-      if (timeline) return;
-      isLoaded.value = false;
-      reportError('無法播放這個音訊檔案，請確認檔案格式。');
-    },
-  };
-  Object.entries(listeners).forEach(([event, listener]) => audio.addEventListener(event, listener));
   watch(volume, (value) => {
     if (master) master.gain.value = value;
-    else audio.volume = value;
   });
 
   async function initAudio() {
@@ -99,11 +62,8 @@ export function useAudioPlayer(
       analyser.smoothingTimeConstant = 0.82;
       analyser.minDecibels = -85;
       analyser.maxDecibels = -15;
-      const source = context.createMediaElementSource(audio);
       master = context.createGain();
       master.gain.value = volume.value;
-      audio.volume = 1;
-      source.connect(master);
       master.connect(analyser);
       analyser.connect(context.destination);
       resources.audioContextRef.current = context;
@@ -113,36 +73,23 @@ export function useAudioPlayer(
     await resources.audioContextRef.current.resume();
   }
 
-  function load(url: string) {
-    pause();
-    timeline = null;
-    renderState.current.timelineDuration = null;
-    duration.value = 0;
-    isLoaded.value = false;
-    currentTime.value = 0;
-    renderState.current.currentTime = 0;
-    audio.src = url;
-    audio.load();
-  }
   async function play() {
-    if (!isLoaded.value) return;
+    if (!timeline || !isLoaded.value || isPlaying.value) return;
     const request = ++playbackRequest;
     await initAudio();
     if (request !== playbackRequest) return;
-    if (timeline) {
-      if (currentTime.value >= duration.value) seek(0);
-      playheadOrigin = currentTime.value;
-      clockOrigin = resources.audioContextRef.current!.currentTime + 0.03;
-      stopSources = timeline.schedule(
-        resources.audioContextRef.current!,
-        resources.sourceRef.current!,
-        playheadOrigin,
-        clockOrigin,
-      );
-      isPlaying.value = true;
-      renderState.current.isPlaying = true;
-      tick();
-    } else await audio.play();
+    if (currentTime.value >= duration.value) seek(0);
+    playheadOrigin = currentTime.value;
+    clockOrigin = resources.audioContextRef.current!.currentTime + 0.03;
+    stopSources = timeline.schedule(
+      resources.audioContextRef.current!,
+      resources.sourceRef.current!,
+      playheadOrigin,
+      clockOrigin,
+    );
+    isPlaying.value = true;
+    renderState.current.isPlaying = true;
+    tick();
   }
   function pause() {
     playbackRequest++;
@@ -155,7 +102,6 @@ export function useAudioPlayer(
     if (clockFrame !== null) cancelAnimationFrame(clockFrame);
     clockFrame = null;
     timeline?.sync(currentTime.value, false);
-    audio.pause();
     isPlaying.value = false;
     renderState.current.isPlaying = false;
   }
@@ -168,29 +114,18 @@ export function useAudioPlayer(
     }
   }
   function seek(time: number) {
-    if (!isLoaded.value && !timeline) return;
+    if (!timeline) return;
     const nextTime = Math.max(0, Math.min(duration.value, time));
-    if (timeline) {
-      const resume = isPlaying.value;
-      if (resume) pause();
-      currentTime.value = nextTime;
-      renderState.current.currentTime = nextTime;
-      timeline.sync(nextTime, false);
-      if (resume) void play().catch(() => reportError('無法恢復時間軸播放。'));
-      return;
-    }
-    audio.currentTime = nextTime;
+    const resume = isPlaying.value;
+    if (resume) pause();
     currentTime.value = nextTime;
     renderState.current.currentTime = nextTime;
+    timeline.sync(nextTime, false);
+    if (resume) void play().catch(() => reportError('無法恢復時間軸播放。'));
   }
 
   onBeforeUnmount(() => {
     pause();
-    Object.entries(listeners).forEach(([event, listener]) =>
-      audio.removeEventListener(event, listener),
-    );
-    audio.removeAttribute('src');
-    audio.load();
     resources.sourceRef.current?.disconnect();
     resources.analyserRef.current?.disconnect();
     void resources.audioContextRef.current?.close();
@@ -201,15 +136,13 @@ export function useAudioPlayer(
     duration,
     volume,
     isLoaded,
-    load,
     setTimeline,
     initAudio,
     play,
     pause,
     toggle,
     seek,
-    getCurrentTime: () =>
-      timeline ? (isPlaying.value ? timelineTime() : currentTime.value) : audio.currentTime,
+    getCurrentTime: () => (isPlaying.value ? timelineTime() : currentTime.value),
   };
 }
 export type AudioPlayer = ReturnType<typeof useAudioPlayer>;

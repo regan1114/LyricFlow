@@ -52,6 +52,29 @@ function setup(mode: 'manual' | 'auto' = 'manual') {
   return { sequence, editor, raw, state, timeline: () => timeline };
 }
 describe('media sequence', () => {
+  it('keeps the final image at the exact work endpoint without filling intentional tail gaps', async () => {
+    const { sequence, timeline, state } = setup();
+    await sequence.importFiles(
+      [new File(['image'], 'first.png'), new File(['image'], 'last.png')],
+      'visual',
+    );
+    sequence.addAll();
+    await nextTick();
+    timeline().sync(4.999, false);
+    expect(state.current.timelineVisual?.name).toBe('first.png');
+    timeline().sync(5, false);
+    expect(state.current.timelineVisual?.name).toBe('last.png');
+    timeline().sync(10, false);
+    expect(state.current.timelineVisual?.name).toBe('last.png');
+    await sequence.importFiles([new File(['abcdefghijkl'], 'song.wav')], 'audio');
+    sequence.add(sequence.assets.value[2].id, 'A1', 0);
+    await nextTick();
+    for (const time of [10, 12]) {
+      timeline().sync(time, false);
+      expect(state.current.timelineVisual).toBeNull();
+    }
+  });
+
   it('shows the latest overlapping visual and preserves stable order for equal starts', async () => {
     const { sequence, timeline, state: renderState } = setup();
     await sequence.importFiles(

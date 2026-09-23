@@ -16,14 +16,14 @@ class LyricFlowError(RuntimeError):
 
 
 class LyricFlowClient:
-    def __init__(self, base_url="http://127.0.0.1:8765", request_timeout=60):
+    def __init__(self, base_url="http://127.0.0.1:8080", request_timeout=60):
         self.url = urlparse(base_url)
         if (
             self.url.scheme not in ("http", "https")
             or not self.url.hostname
             or self.url.path not in ("", "/")
         ):
-            raise ValueError("base_url 必須是完整服務網址，例如 http://127.0.0.1:8765")
+            raise ValueError("base_url 必須是完整服務網址，例如 http://127.0.0.1:8080")
         self.request_timeout = request_timeout
 
     def _request(self, method, path, body=None, headers=None):

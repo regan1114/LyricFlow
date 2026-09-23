@@ -1,4 +1,4 @@
-import { onBeforeUnmount, shallowRef, watch } from 'vue';
+import { onBeforeUnmount, onMounted, shallowRef, watch } from 'vue';
 import { processOverlay } from '../services/colorKey';
 import type { RenderResources } from '../engine/resources';
 import type { StudioSettings } from '../config/settings';
@@ -6,7 +6,6 @@ import type { StudioSettings } from '../config/settings';
 export type VisualMedia =
   | { id: string; name: string; type: 'image'; url: string; element: HTMLImageElement }
   | { id: string; name: string; type: 'video'; url: string; element: HTMLVideoElement };
-type AudioMedia = { name: string; url: string };
 export type LayerKind = 'logo' | 'overlay' | 'core';
 type Layers = Record<LayerKind, VisualMedia | null>;
 
@@ -15,7 +14,6 @@ export function useMediaLibrary(
   settings: StudioSettings,
   reportError: (message: string) => void,
 ) {
-  const audio = shallowRef<AudioMedia | null>(null);
   const backgrounds = shallowRef<VisualMedia[]>([]);
   const layerFiles = shallowRef<Record<LayerKind, File | null>>({
     logo: null,
@@ -25,9 +23,9 @@ export function useMediaLibrary(
   const layers = shallowRef<Layers>({ logo: null, overlay: null, core: null });
   let disposed = false;
 
-  function release(media: VisualMedia | AudioMedia | null) {
+  function release(media: VisualMedia | null) {
     if (!media) return;
-    if ('element' in media && media.element instanceof HTMLVideoElement) {
+    if (media.element instanceof HTMLVideoElement) {
       media.element.pause();
       media.element.removeAttribute('src');
       media.element.load();
@@ -88,46 +86,10 @@ export function useMediaLibrary(
   function cancelBackgroundLoad() {
     backgroundRequest++;
   }
-  async function setBackgrounds(files: FileList | File[]): Promise<boolean> {
-    const request = ++backgroundRequest;
-    const results = await Promise.allSettled(
-      [...files]
-        .sort((firstFile, secondFile) =>
-          (firstFile.name || '').localeCompare(secondFile.name || ''),
-        )
-        .map((file) => loadVisual(file)),
-    );
-    const loaded = results.flatMap((result) =>
-      result.status === 'fulfilled' && result.value ? [result.value] : [],
-    );
-    if (request !== backgroundRequest || disposed) {
-      loaded.forEach(release);
-      return false;
-    }
-    const failed = results.find((result) => result.status === 'rejected');
-    if (failed) reportError(failed.reason.message);
-    if (!loaded.length) return false;
-    backgrounds.value.forEach(release);
-    resources.imageCache.current = {};
-    resources.videoRefs.current = {};
-    resources.cacheCanvases.current = {};
-    for (const media of loaded) {
-      if (media.type === 'video') {
-        media.element.loop = loaded.length === 1;
-        resources.videoRefs.current[media.url] = media.element;
-      } else resources.imageCache.current[media.url] = media.element;
-    }
-    backgrounds.value = loaded;
-    return true;
-  }
-
   function clearBackgrounds() {
     backgroundRequest++;
     backgrounds.value.forEach(release);
     backgrounds.value = [];
-    resources.imageCache.current = {};
-    resources.videoRefs.current = {};
-    resources.cacheCanvases.current = {};
   }
 
   async function setBuiltInBackground(url: string, name: string) {
@@ -139,15 +101,7 @@ export function useMediaLibrary(
       return;
     }
     clearBackgrounds();
-    resources.imageCache.current[media.url] = media.element;
     backgrounds.value = [media];
-  }
-
-  function setAudio(file: File) {
-    release(audio.value);
-    const url = URL.createObjectURL(file);
-    audio.value = { name: file.name, url };
-    settings.songName = file.name.replace(/\.[^.]+$/, '');
   }
 
   const layerRequest = { logo: 0, overlay: 0, core: 0 };
@@ -197,6 +151,25 @@ export function useMediaLibrary(
     if (kind === 'overlay') updateOverlay();
   }
 
+  onMounted(async () => {
+    const request = ++layerRequest.logo;
+    try {
+      const response = await fetch(`${import.meta.env.BASE_URL}logo.png`);
+      if (!response.ok) throw new Error('無法讀取預設 Logo。');
+      const file = new File([await response.blob()], 'logo.png', { type: 'image/png' });
+      if (disposed || request !== layerRequest.logo) return;
+      const media = await loadVisual(file);
+      if (!media) return;
+      if (request !== layerRequest.logo) {
+        release(media);
+        return;
+      }
+      commitLayer('logo', media, file);
+    } catch {
+      if (!disposed && request === layerRequest.logo) reportError('預設 Logo 載入失敗。');
+    }
+  });
+
   function updateOverlay() {
     resources.processedOverlayRef.current = processOverlay(
       resources.overlayImgRef.current,
@@ -209,20 +182,16 @@ export function useMediaLibrary(
   );
   onBeforeUnmount(() => {
     disposed = true;
-    release(audio.value);
     backgrounds.value.forEach(release);
     Object.values(layers.value).forEach(release);
   });
   return {
-    audio,
     loadVisual,
     backgrounds,
     layers,
     layerFiles,
     commitLayer,
     release,
-    setAudio,
-    setBackgrounds,
     cancelBackgroundLoad,
     setBuiltInBackground,
     clearBackgrounds,

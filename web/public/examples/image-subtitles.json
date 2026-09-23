@@ -1,0 +1,35 @@
+{
+  "version": 1,
+  "scenes": [
+    {
+      "name": "清晨.png",
+      "startTime": 0.0,
+      "endTime": 2.0,
+      "content": "晨光輕輕落在窗前"
+    },
+    {
+      "name": "清晨.png",
+      "startTime": 2.0,
+      "endTime": 4.0,
+      "content": "我們迎著微風向前"
+    },
+    {
+      "name": "海岸.png",
+      "startTime": 4.0,
+      "endTime": 8.0,
+      "content": "讓心事隨海浪慢慢走遠"
+    },
+    {
+      "name": "夜色.png",
+      "startTime": 8.0,
+      "endTime": 10.0,
+      "content": "夜色點亮遠方的思念"
+    },
+    {
+      "name": "夜色.png",
+      "startTime": 10.0,
+      "endTime": 12.0,
+      "content": "下一段旅程與你相見"
+    }
+  ]
+}
