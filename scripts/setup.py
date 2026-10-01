@@ -144,8 +144,8 @@ def main():
     parser.add_argument("--jobs", type=int, choices=range(1, 9), default=2, metavar="1–8")
     parser.add_argument("--rebuild", action="store_true", help="rebuild the installed CPU engine")
     args = parser.parse_args()
-    if not (3, 9) <= sys.version_info[:2] < (3, 13):
-        parser.error("Use Python 3.9–3.12 (3.12 recommended); audioop was removed in 3.13.")
+    if sys.version_info[:2] < (3, 12):
+        parser.error("Use Python 3.12 or later.")
     if sys.platform not in ("darwin", "win32") and not sys.platform.startswith("linux"):
         parser.error("Use macOS, Linux, or Windows x64.")
     if sys.platform == "win32" and (

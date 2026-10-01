@@ -8,6 +8,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
+from scripts import setup
 from scripts.setup import WHISPER_COMMIT, download_verified, extract_source, install_engine
 
 
@@ -18,6 +19,33 @@ class SetupTests(unittest.TestCase):
 
     def tearDown(self):
         self.temporary.cleanup()
+
+    def test_setup_accepts_python_312_and_newer(self):
+        for version in ((3, 12), (3, 13), (3, 14)):
+            with (
+                self.subTest(version=version),
+                patch("sys.argv", ["setup.py"]),
+                patch("scripts.setup.sys.version_info", version),
+                patch("scripts.setup.sys.platform", "linux"),
+                patch("scripts.setup.install_engine") as install,
+                patch("scripts.setup.download_verified") as download,
+            ):
+                setup.main()
+                install.assert_called_once()
+                download.assert_called_once()
+
+    def test_setup_rejects_older_python_before_installing(self):
+        with (
+            patch("sys.argv", ["setup.py"]),
+            patch("scripts.setup.sys.version_info", (3, 11)),
+            patch("scripts.setup.install_engine") as install,
+            patch("sys.stderr", new_callable=io.StringIO) as stderr,
+            self.assertRaises(SystemExit) as error,
+        ):
+            setup.main()
+        self.assertEqual(error.exception.code, 2)
+        self.assertIn("Python 3.12 or later", stderr.getvalue())
+        install.assert_not_called()
 
     def test_download_verification_keeps_previous_file_on_failure(self):
         target = self.directory / "model.bin"

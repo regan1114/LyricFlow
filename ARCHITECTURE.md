@@ -81,6 +81,7 @@ Python 使用 Ruff；前端使用 Prettier、ESLint、vue-tsc、Vitest 與 Playw
 
 `requirements.txt` 固定執行時相依版本，`requirements-dev.txt` 加入 Ruff，
 `requirements-build.txt` 提供僅編譯時需要的 CMake。
+主程式以 Python 3.12 為最低支援版本，3.13 以上透過 `audioop-lts` 延續 PCM 轉換。
 `scripts/setup.py` 將引擎安裝至 `.local/bin/whisper-cli`，模型放在 `.local/models/`，
 引擎授權文字保留於 `.local/licenses/`；原始碼下載及編譯目錄放在系統暫存區並於結束後移除。
 這些本機產物與 `.venv/`、`node_modules/`、`.cache/`、使用者素材均由 `.gitignore` 排除。

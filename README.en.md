@@ -155,7 +155,7 @@ Recognition requires the Python service, engine and model on your computer. A re
 ### Requirements
 
 - Node.js 22.12 or later for frontend installation and building.
-- Python 3.9–3.12; 3.12 is recommended. The backend currently does not support Python 3.13 or later.
+- Python 3.12 or later; the main app has been verified with 3.12, 3.13 and 3.14.
 - C/C++ build tools on macOS/Linux. Native Windows x64 uses Visual Studio 2022 Build Tools with the Desktop development with C++ workload.
 - Internet access for the initial dependency, whisper.cpp and model downloads. Recognition runs on the local CPU; no GPU is required.
 
@@ -181,12 +181,16 @@ Setup verifies downloads, builds whisper.cpp and stores the engine and model in 
 
 Open `http://127.0.0.1:8080`. Keep the terminal running while using the app; press Ctrl+C to stop it.
 
+To upgrade an existing environment, stop the service and rename the old `.venv` as a backup, then repeat the `venv` and dependency installation commands with your chosen Python 3.12+ executable. Virtual environments do not upgrade when the system Python changes. The engine and models in `.local/` can be reused. Python 3.13+ automatically installs `audioop-lts` to preserve the existing PCM conversion behavior.
+
 ### Windows
 
-Install Node.js, Python 3.12 x64 including the Python Launcher, and Visual Studio 2022 Build Tools. Run `npm ci` and `npm run build` in the repository root, then:
+Install Node.js, Python 3.12 or later (x64) including the Python Launcher, and Visual Studio 2022 Build Tools. Run `npm ci` and `npm run build` in the repository root, then:
 
 1. Run `setup-windows.cmd` to install Python dependencies, the recognition engine and model.
 2. Run `start-windows.cmd` to open the local application.
+
+Setup uses `py -3` for a new environment and validates an existing `.venv`. To select a version, first run, for example, `py -3.12 -m venv .venv`, then run setup. Rename any existing environment older than 3.12 as a backup first.
 
 Native Windows support still needs device verification. Alternatively, use WSL2 and follow the Linux instructions inside Ubuntu. Do not share `.venv/` or `.local/` across operating systems.
 

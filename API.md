@@ -155,5 +155,5 @@ API 回傳目前工作儲存的字幕，保留原歌詞與 Suno 標記清理規�
 補辨識會包含送出的手動時間；之後僅在瀏覽器修改、未再次送出的時間不會同步到 API。
 未定位的句子不會放入 SRT，請透過 `result.unmatched_count` 及檢查表判斷是否需人工處理。
 
-伺服器使用專案 `.venv` 的 Python 3.9–3.12、Flask 3.1.3 與 Werkzeug；multipart 上傳由框架處理。
+伺服器使用專案 `.venv` 的 Python 3.12 以上、Flask 3.1.3 與 Werkzeug；multipart 上傳由框架處理。
 模組責任請見 [架構說明](ARCHITECTURE.md)。

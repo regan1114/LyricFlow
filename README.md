@@ -155,7 +155,7 @@ npm run preview:static
 ### 環境需求
 
 - Node.js 22.12 以上：用於前端安裝與建置。
-- Python 3.9–3.12，建議 3.12；目前後端不支援 Python 3.13 以上。
+- Python 3.12 以上；主程式已驗證支援 3.12／3.13／3.14。
 - macOS／Linux 的 C/C++ 編譯工具；Windows x64 使用 Visual Studio 2022 Build Tools 的「使用 C++ 的桌面開發」工作負載。
 - 初次安裝需要網路下載相依套件、whisper.cpp 與模型，辨識使用本機 CPU，不需要 GPU。
 
@@ -181,12 +181,16 @@ python app.py --open
 
 瀏覽器開啟 `http://127.0.0.1:8080`。使用期間保留終端機，按 Ctrl+C 關閉服務。
 
+升級既有環境時，先停止服務並將舊 `.venv` 改名備份，再使用所選的 Python 3.12 以上版本重跑上述 `venv` 與套件安裝指令。虛擬環境不會隨系統 Python 自動升級；`.local/` 中的辨識引擎與模型可繼續使用。Python 3.13 以上會自動安裝 `audioop-lts`，保留原有 PCM 音訊轉換行為。
+
 ### Windows
 
-先安裝 Node.js、Python 3.12 x64（含 Python Launcher）及 Visual Studio 2022 Build Tools。在專案根目錄執行 `npm ci`、`npm run build`，再依序執行：
+先安裝 Node.js、Python 3.12 以上 x64（含 Python Launcher）及 Visual Studio 2022 Build Tools。在專案根目錄執行 `npm ci`、`npm run build`，再依序執行：
 
 1. 雙擊 `setup-windows.cmd` 安裝 Python 相依套件、辨識引擎與模型。
 2. 安裝完成後，雙擊 `start-windows.cmd` 開啟本機網頁。
+
+安裝腳本以 `py -3` 建立新環境；已有 `.venv` 時會驗證其版本。若要指定版本，可先執行例如 `py -3.12 -m venv .venv`，再執行安裝腳本。低於 3.12 的舊環境需先改名備份。
 
 原生 Windows 支援仍待實機驗證。也可透過 WSL2，在 Ubuntu 中依照上方 Linux 流程安裝與啟動。不要跨作業系統共用 `.venv/` 或 `.local/`。
 

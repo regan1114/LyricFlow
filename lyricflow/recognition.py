@@ -16,7 +16,7 @@ MODEL = ROOT / ".local/models/ggml-small-q5_1.bin"
 
 
 def prepare_wav(source, target):
-    # The bundled environment uses Python 3.9. audioop is available through 3.12.
+    # Python 3.13+ uses the API-compatible audioop-lts package from requirements.txt.
     import audioop
 
     state = None
