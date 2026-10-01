@@ -81,12 +81,33 @@ Python 使用 Ruff；前端使用 Prettier、ESLint、vue-tsc、Vitest 與 Playw
 
 `requirements.txt` 固定執行時相依版本，`requirements-dev.txt` 加入 Ruff，
 `requirements-build.txt` 提供僅編譯時需要的 CMake。
-主程式以 Python 3.12 為最低支援版本，3.13 以上透過 `audioop-lts` 延續 PCM 轉換。
 `scripts/setup.py` 將引擎安裝至 `.local/bin/whisper-cli`，模型放在 `.local/models/`，
 引擎授權文字保留於 `.local/licenses/`；原始碼下載及編譯目錄放在系統暫存區並於結束後移除。
 這些本機產物與 `.venv/`、`node_modules/`、`.cache/`、使用者素材均由 `.gitignore` 排除。
 
 ## 開發與驗證
+
+### 共用歌詞引擎（Phase 1）
+
+新模式沿用 Flask 與既有工作生命週期，`processor` 依 `known_lyrics` 啟動
+`.venv-alignment` 中的 `lyrics_timeline.py`。`lyricflow/timeline/` 分離音訊處理、
+人聲分離／區段映射、known-text alignment、原文正規化、cache、驗證與 JSON／SRT 匯出。
+此模式不呼叫 ASR，也不依賴原 Whisper CLI 安裝；精確依賴見 `requirements-alignment.txt`。
+選用 Demucs 依賴見 `requirements-separation.txt`。
+
+`packages/lyrics-timeline` 為兩個前端共用的 seconds-based wire contract；Vue 直接引用，
+MyCut 使用版本化本機 npm 封裝，在既有 frame-based Clip 模型邊界換算。
+Vue 的既有 raw 字串欄位可保存 JSON，避免將 words 經 SRT 丟失；修改文字／裁切使 words
+失效時退回逐句。預覽和錄影共用逐字高亮繪圖。
+
+完整新增 API 與使用限制見 [API.md](API.md)、[LYRICS_ENGINE.md](LYRICS_ENGINE.md)。
+以下原有測試外，新引擎的純陣列 CTC／人聲時間映射測試需執行：
+
+```sh
+.venv-alignment/bin/python -m unittest tests.test_ctc -v
+```
+
+測試命令與實測結果見 [LYRICS_ENGINE_TESTS.md](LYRICS_ENGINE_TESTS.md)。
 
 ```sh
 .venv/bin/python -m pip install -r requirements-dev.txt

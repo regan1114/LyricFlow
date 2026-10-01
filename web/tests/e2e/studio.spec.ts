@@ -528,7 +528,7 @@ test('captions edit, search, split, drag, trim, lock and export in the shared wo
       .evaluate((element) => element.scrollWidth > element.clientWidth),
   ).toBe(true);
   await page.getByRole('button', { name: '適合', exact: true }).click();
-  await expect(page.locator('.caption-row input[type=number]')).toHaveCount(0);
+  await expect(page.locator('.caption-row input[type=number]')).toHaveCount(4);
   const pending = page.waitForEvent('download');
   await page.getByRole('button', { name: 'SRT', exact: true }).click();
   const download = await pending;

@@ -2,6 +2,7 @@ import { onBeforeUnmount, ref, type Ref } from 'vue';
 import { autoRecognitionEnabled } from '../config/features';
 import { parseSubtitles, serializeSrt } from '../domain/subtitles';
 import type { MediaClip } from '../domain/mediaSequence';
+import { mapTimeline, validateProject } from '../domain/lyricsTimeline';
 
 interface Job {
   id: string;
@@ -9,6 +10,7 @@ interface Job {
   message: string;
   progress?: { percent: number | null };
   result?: { unmatched_count: number; review_count: number };
+  error?: { code: string; message: string; details: string; suggestion: string };
 }
 
 async function request(path: string, options?: RequestInit) {
@@ -21,7 +23,11 @@ async function request(path: string, options?: RequestInit) {
     const response = await fetch(path, { ...options, signal: controller.signal });
     if (!response.ok) {
       const body = await response.json().catch(() => null);
-      throw new Error(body?.error || `辨識服務連線失敗（${response.status}）。`);
+      throw new Error(
+        body?.message
+          ? `${body.message} ${body.suggestion || ''}`
+          : body?.error || `辨識服務連線失敗（${response.status}）。`,
+      );
     }
     return response;
   } catch (cause) {
@@ -67,7 +73,17 @@ export function useAutoRecognition(busy: Ref<boolean>) {
     }
   }
 
-  async function start(file: File, text: string, clips: MediaClip[], apply: (srt: string) => void) {
+  async function start(
+    file: File,
+    text: string,
+    clips: MediaClip[],
+    apply: (srt: string) => void,
+    options: {
+      mode?: 'legacy' | 'known_lyrics';
+      preserve_lines?: boolean;
+      separation?: 'original' | 'demucs';
+    } = {},
+  ) {
     if (!autoRecognitionEnabled) {
       error.value = '此版本未提供自動辨識，請匯入字幕或使用手動對時。';
       return false;
@@ -84,13 +100,24 @@ export function useAutoRecognition(busy: Ref<boolean>) {
     transfer = new AbortController();
     try {
       const health = await (await request('/api/health', { signal: transfer.signal })).json();
-      if (!health.ready) throw new Error('辨識引擎或模型尚未安裝，請先完成 LyricFlow 安裝。');
+      if (options.mode === 'known_lyrics' ? !health.alignment?.ready : !health.ready)
+        throw new Error(
+          options.mode === 'known_lyrics'
+            ? '歌詞對齊引擎尚未安裝，請執行 .venv/bin/python scripts/setup_alignment.py。'
+            : '辨識引擎或模型尚未安裝，請先完成 LyricFlow 安裝。',
+        );
       if (cancelling.value || disposed) return false;
       const created: Job = await (
         await request('/api/jobs', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name: file.name, size: file.size, lyrics: text, threads: 4 }),
+          body: JSON.stringify({
+            name: file.name,
+            size: file.size,
+            lyrics: text,
+            threads: 4,
+            ...options,
+          }),
         })
       ).json();
       jobId = created.id;
@@ -112,9 +139,27 @@ export function useAutoRecognition(busy: Ref<boolean>) {
         if (cancelling.value || disposed) break;
         message.value = job.message;
         percent.value = job.progress?.percent ?? null;
-        if (job.status === 'error') throw new Error(job.message);
+        if (job.status === 'error')
+          throw new Error(
+            job.error
+              ? `${job.error.message} ${job.error.details} ${job.error.suggestion}`
+              : job.message,
+          );
         if (job.status === 'cancelled') return false;
         if (job.status === 'done') {
+          if (options.mode === 'known_lyrics') {
+            const result = validateProject(
+              await (
+                await request(`/api/jobs/${jobId}/timeline`, { signal: transfer.signal })
+              ).json(),
+            );
+            if (cancelling.value || disposed) break;
+            const mapped = mapTimeline(result, clips);
+            if (!mapped.segments.length) throw new Error('目前音軌裁切範圍內沒有可套用的字幕。');
+            apply(JSON.stringify(mapped));
+            message.value = `對齊完成，已套用 ${mapped.segments.length} 句原始歌詞。請播放檢查並微調歌唱邊界。`;
+            return true;
+          }
           const srt = await (
             await request(`/api/jobs/${jobId}/srt`, { signal: transfer.signal })
           ).text();

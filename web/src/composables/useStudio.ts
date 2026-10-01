@@ -14,7 +14,8 @@ import { useMediaSequence } from './useMediaSequence';
 import { useImageSubtitleImport } from './useImageSubtitleImport';
 import { ensureFontLoaded } from '../config/fonts';
 import { sceneDefinitions, createSceneSettings, isLandscapeId } from '../config/scenes';
-import { createImageRhythm } from '../domain/autoImages';
+import { createImageRhythm, type ImageRhythm } from '../domain/autoImages';
+import { isTimeline, validateProject } from '../domain/lyricsTimeline';
 
 export function createStudio() {
   const settings = reactive(createSettings());
@@ -33,6 +34,7 @@ export function createStudio() {
   const player = useAudioPlayer(resources, renderState, reportError);
   const media = useMediaLibrary(resources, settings, reportError);
   const lyrics = useLyrics(player, settings, reportError);
+  const frozenImageRhythm = ref<ImageRhythm | null>();
   const recording = useRecording(
     resources,
     renderState,
@@ -103,6 +105,7 @@ export function createStudio() {
     media,
     player,
     raw: lyrics.raw,
+    frozenImageRhythm,
     subtitleFilename,
     afterCommit: () => {
       subtitleSourceRevision.value++;
@@ -154,11 +157,19 @@ export function createStudio() {
       : images;
   });
   const imageRhythm = computed(() =>
-    createImageRhythm(
-      lyrics.cues.value.map((cue) => cue.time),
-      Math.max(0, ...lyrics.cues.value.map((cue) => cue.endTime)),
-    ),
+    frozenImageRhythm.value !== undefined
+      ? (frozenImageRhythm.value ?? undefined)
+      : createImageRhythm(
+          lyrics.cues.value.map((cue) => cue.time),
+          Math.max(0, ...lyrics.cues.value.map((cue) => cue.endTime)),
+        ),
   );
+  function preserveImageRhythm() {
+    if (frozenImageRhythm.value === undefined && activeBackgrounds.value.length)
+      frozenImageRhythm.value = imageRhythm.value
+        ? { starts: [...imageRhythm.value.starts], duration: imageRhythm.value.duration }
+        : null;
+  }
   watchEffect(() => {
     Object.assign(renderState.current, settings, {
       sceneSettings: { ...sceneSettings },
@@ -247,9 +258,11 @@ export function createStudio() {
         }
         const request = ++subtitleRequest;
         const text = await files[0].text();
+        if (isTimeline(text)) validateProject(JSON.parse(text));
         if (request !== subtitleRequest || recognitionBusy.value || recording.isRecording.value)
           return;
         lyrics.cancel();
+        if (isTimeline(text)) preserveImageRhythm();
         lyrics.raw.value = text;
         subtitleFilename.value = files[0].name;
         subtitleSourceRevision.value++;
@@ -261,6 +274,7 @@ export function createStudio() {
   }
 
   return {
+    preserveImageRhythm,
     recognition,
     settings,
     exportSettings,

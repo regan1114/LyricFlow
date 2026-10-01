@@ -24,6 +24,7 @@ export function useAudioPlayer(
   let clockOrigin = 0;
   let playheadOrigin = 0;
   let master: GainNode | null = null;
+  let rangeEnd: number | null = null;
   function timelineTime() {
     return Math.min(
       duration.value,
@@ -36,8 +37,10 @@ export function useAudioPlayer(
     currentTime.value = timelineTime();
     renderState.current.currentTime = currentTime.value;
     timeline.sync(currentTime.value, true);
-    if (currentTime.value >= duration.value) {
+    if (currentTime.value >= (rangeEnd ?? duration.value)) {
+      const end = rangeEnd;
       pause();
+      if (end !== null) seek(end);
       return;
     }
     clockFrame = requestAnimationFrame(tick);
@@ -92,6 +95,7 @@ export function useAudioPlayer(
     tick();
   }
   function pause() {
+    rangeEnd = null;
     playbackRequest++;
     if (timeline && isPlaying.value) {
       currentTime.value = timelineTime();
@@ -114,6 +118,7 @@ export function useAudioPlayer(
     }
   }
   function seek(time: number) {
+    rangeEnd = null;
     if (!timeline) return;
     const nextTime = Math.max(0, Math.min(duration.value, time));
     const resume = isPlaying.value;
@@ -122,6 +127,18 @@ export function useAudioPlayer(
     renderState.current.currentTime = nextTime;
     timeline.sync(nextTime, false);
     if (resume) void play().catch(() => reportError('無法恢復時間軸播放。'));
+  }
+
+  async function playRange(start: number, end: number) {
+    pause();
+    seek(start);
+    rangeEnd = Math.min(end, duration.value);
+    try {
+      await play();
+    } catch {
+      rangeEnd = null;
+      reportError('無法播放此句字幕。');
+    }
   }
 
   onBeforeUnmount(() => {
@@ -142,6 +159,7 @@ export function useAudioPlayer(
     pause,
     toggle,
     seek,
+    playRange,
     getCurrentTime: () => (isPlaying.value ? timelineTime() : currentTime.value),
   };
 }

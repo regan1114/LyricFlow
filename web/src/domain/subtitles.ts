@@ -12,6 +12,9 @@ export interface SubtitleCue extends ParsedLine {
   endTime: number;
   uid: string;
   animType: number;
+  segmentId?: number;
+  confidence?: number;
+  words?: LyricWord[];
 }
 
 function lyricText(text: string) {
@@ -39,6 +42,7 @@ function parseSrt(text: string): ParsedLine[] {
 }
 
 export function parseSubtitles(raw: string): SubtitleCue[] {
+  if (isTimeline(raw)) return timelineCues(validateProject(JSON.parse(raw)));
   const text = raw.replace(/\r/g, '').trim();
   const cues: ParsedLine[] = text.includes('-->')
     ? parseSrt(text)
@@ -96,6 +100,7 @@ export function serializeSrt(
 }
 
 export function getUntimedLines(raw: string) {
+  if (isTimeline(raw)) return parseSubtitles(raw).map((cue) => cue.text);
   if (raw.includes('-->'))
     return parseSubtitles(raw).map((cue) =>
       [cue.text, cue.subText, cue.thirdText].filter(Boolean).join(' | '),
@@ -106,3 +111,4 @@ export function getUntimedLines(raw: string) {
     .map((line) => line.trim())
     .filter((line) => line && !/^\[[a-z]+:/i.test(line));
 }
+import { isTimeline, timelineCues, validateProject, type LyricWord } from './lyricsTimeline';

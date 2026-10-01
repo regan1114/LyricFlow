@@ -16,6 +16,9 @@ class JobInput:
     size: int
     lyrics: str
     threads: int
+    mode: str = "legacy"
+    preserve_lines: bool = True
+    separation: str = "original"
 
 
 def integer(value, field):
@@ -44,13 +47,22 @@ def parse_job_input(data) -> JobInput:
     lyrics = data.get("lyrics", "")
     if not isinstance(lyrics, str) or not re.sub(r"\[[^\]]*\]|\s|\ufeff", "", lyrics):
         raise ValidationError("請提供實際演唱的歌詞文字。")
-    lyrics = lyrics.lstrip("\ufeff").strip()
+    mode = data.get("mode", "legacy")
+    lyrics = lyrics.lstrip("\ufeff")
+    if mode != "known_lyrics":
+        lyrics = lyrics.strip()
     if len(lyrics) > MAX_LYRICS_CHARACTERS:
         raise ValidationError("歌詞限 12,000 字以內。")
     threads = integer(data.get("threads", 4), "threads")
     if threads not in (2, 4):
         raise ValidationError("threads 必須為 2 或 4。")
-    return JobInput(name, size, lyrics, threads)
+    preserve_lines = data.get("preserve_lines", True)
+    separation = data.get("separation", "original")
+    if mode not in ("legacy", "known_lyrics"):
+        raise ValidationError("不支援此字幕來源模式。")
+    if type(preserve_lines) is not bool or separation not in ("original", "demucs"):
+        raise ValidationError("preserve_lines 必須為布林值；separation 為 original 或 demucs。")
+    return JobInput(name, size, lyrics, threads, mode, preserve_lines, separation)
 
 
 def retry_rows(data, original, duration):

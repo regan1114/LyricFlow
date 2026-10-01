@@ -123,6 +123,12 @@ watch(isSyncing, async (syncing) => {
     >
       <button
         type="button"
+        @click="lyrics.exportFile('json')"
+      >
+        <Download :size="15" />JSON
+      </button>
+      <button
+        type="button"
         @click="lyrics.exportFile('lrc')"
       >
         <Download :size="15" />LRC

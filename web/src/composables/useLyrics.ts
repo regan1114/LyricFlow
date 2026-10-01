@@ -10,6 +10,7 @@ import {
 import { downloadText } from '../services/download';
 import type { AudioPlayer } from './useAudioPlayer';
 import type { StudioSettings } from '../config/settings';
+import { cuesProject, isTimeline, validateProject } from '../domain/lyricsTimeline';
 
 export function useLyrics(
   player: AudioPlayer,
@@ -72,7 +73,14 @@ export function useLyrics(
     isSyncing.value = false;
     player.pause();
   }
-  function exportFile(format: 'lrc' | 'srt' | 'txt') {
+  function exportFile(format: 'lrc' | 'srt' | 'txt' | 'json') {
+    if (format === 'json') {
+      const project = isTimeline(raw.value)
+        ? validateProject(JSON.parse(raw.value))
+        : cuesProject(cues.value, 'import', player.duration.value);
+      downloadText(JSON.stringify(project, null, 2), `${settings.songName || 'lyrics'}.json`);
+      return;
+    }
     const text =
       format === 'srt'
         ? serializeSrt(cues.value)

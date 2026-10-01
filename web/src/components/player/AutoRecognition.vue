@@ -11,6 +11,9 @@ const { sequence, lyrics, subtitleEditor, recognition, recording } = studio;
 const dialog = ref<HTMLDialogElement | null>(null);
 const songId = ref('');
 const text = ref('');
+const source = ref<'legacy' | 'known_lyrics'>('known_lyrics');
+const preserveLines = ref(true);
+const separation = ref<'original' | 'demucs'>('original');
 let sourceText: string | undefined;
 let sourceRevision = -1;
 const confirming = ref(false);
@@ -26,7 +29,8 @@ const blocked = computed(
     recognition.busy.value,
 );
 
-async function open() {
+async function open(mode: 'legacy' | 'known_lyrics' = 'legacy') {
+  source.value = mode;
   if (!songs.value.length) {
     studio.reportError('請先匯入歌曲，再使用自動辨識。');
     return;
@@ -91,6 +95,7 @@ async function submit(confirmed = false) {
     text.value,
     clips.map((clip) => ({ ...clip })),
     (srt) => {
+      if (source.value === 'known_lyrics') studio.preserveImageRhythm();
       lyrics.raw.value = srt;
       // Keep the full submitted lyrics, including unmatched lines, until the document changes.
       sourceText = srt;
@@ -98,17 +103,25 @@ async function submit(confirmed = false) {
       studio.subtitleFilename.value = song.name.replace(/\.[^.]+$/, '') + '.srt';
       studio.mediaTab.value = 'captions';
     },
+    { mode: source.value, preserve_lines: preserveLines.value, separation: separation.value },
   );
   if (completed.value) emit('complete');
 }
 </script>
 
 <template>
+  <button
+    type="button"
+    :disabled="blocked"
+    @click="open('known_lyrics')"
+  >
+    精準歌詞對齊
+  </button>
   <IconButton
     label="自動辨識"
     tooltip
     :disabled="blocked"
-    @click="open"
+    @click="open('legacy')"
   >
     <ScanText
       :size="18"
@@ -124,6 +137,17 @@ async function submit(confirmed = false) {
     <form @submit.prevent="submit()">
       <h2 id="recognition-title">自動辨識</h2>
       <template v-if="!completed">
+        <label for="lyrics-source">歌詞 / 字幕來源</label>
+        <select
+          id="lyrics-source"
+          v-model="source"
+          :disabled="recognition.busy.value || confirming"
+        >
+          <option value="known_lyrics">正確歌詞精準對齊</option>
+          <option value="legacy">既有 ASR 歌詞比對</option>
+          <option disabled>AI 自動辨識（後續階段）</option>
+        </select>
+        <p>也可從工具列匯入 SRT / Timeline JSON。</p>
         <label for="recognition-song">歌曲</label>
         <select
           id="recognition-song"
@@ -138,7 +162,32 @@ async function submit(confirmed = false) {
             {{ song.name }}
           </option>
         </select>
-        <p>辨識完整歌曲，依音軌上的位置與裁切範圍套用字幕。請輸入實際演唱的歌詞。</p>
+        <p>
+          {{
+            source === 'known_lyrics'
+              ? '保留正確歌詞，只分析它在歌曲中的時間。歌唱長音與伴奏可能需要手動校正。'
+              : '辨識完整歌曲，再比對所提供的歌詞。'
+          }}依音軌上的位置與裁切範圍套用字幕。
+        </p>
+        <template v-if="source === 'known_lyrics'">
+          <label
+            ><input
+              v-model="preserveLines"
+              type="checkbox"
+              :disabled="recognition.busy.value || confirming"
+            />
+            保留每行歌詞</label
+          >
+          <label for="vocal-source">音訊處理</label>
+          <select
+            id="vocal-source"
+            v-model="separation"
+            :disabled="recognition.busy.value || confirming"
+          >
+            <option value="original">原始音訊</option>
+            <option value="demucs">分離人聲（需額外安裝）</option>
+          </select>
+        </template>
         <label for="recognition-lyrics">歌詞</label>
         <textarea
           id="recognition-lyrics"
@@ -217,7 +266,7 @@ async function submit(confirmed = false) {
               type="submit"
               :disabled="!text.trim()"
             >
-              送出
+              {{ source === 'known_lyrics' ? '分析並對齊歌詞' : '送出' }}
             </button>
           </template>
         </div>

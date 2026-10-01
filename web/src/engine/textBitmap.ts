@@ -3,6 +3,7 @@ export interface TextBitmap {
   paddingX: number;
   paddingY: number;
   width: number;
+  glyphs?: { from: number; to: number; x: number; y: number; width: number; height: number }[];
 }
 interface CachedTextBitmap extends TextBitmap {
   color: string;
@@ -228,6 +229,33 @@ export function createTextCache(
     canvas.height = Math.ceil((mainFontSize + subFontSize * 2) * 2 + padding * 2);
     context.textBaseline = 'middle';
     context.textAlign = 'left';
+    const glyphs: NonNullable<TextBitmap['glyphs']> = [];
+    const main = lines[0];
+    if (main) {
+      let x = centered
+        ? (canvas.width - main.fragments.reduce((sum, fragment) => sum + fragment.width, 0)) / 2
+        : padding;
+      let offset = 0;
+      for (const fragment of main.fragments) {
+        context.font = fragment.font;
+        let prefix = '';
+        for (const char of fragment.text) {
+          const left = context.measureText(prefix).width;
+          prefix += char;
+          const right = context.measureText(prefix).width;
+          glyphs.push({
+            from: offset,
+            to: offset + char.length,
+            x: x + left,
+            y: main.y - main.size,
+            width: right - left,
+            height: main.size * 2,
+          });
+          offset += char.length;
+        }
+        x += fragment.width;
+      }
+    }
     // Layout and canvas storage survive theme changes; only the visible tint is repainted.
     const paint = (paintColor: string) => {
       context.clearRect(0, 0, canvas.width, canvas.height);
@@ -247,6 +275,7 @@ export function createTextCache(
     };
     paint(tint);
     const bitmap = {
+      glyphs,
       canvas,
       paddingX: padding,
       paddingY: baseline,

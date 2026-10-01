@@ -1,4 +1,5 @@
 import { computed, ref, watch, type Ref } from 'vue';
+import { isTimeline, serializeTimeline, shiftWords } from '../domain/lyricsTimeline';
 import {
   getUntimedLines,
   parseSubtitles,
@@ -10,7 +11,7 @@ import {
 export function useSubtitleEditor(raw: Ref<string>, blocked: () => boolean) {
   function readLines(value: string): SubtitleCue[] {
     const timed = parseSubtitles(value);
-    if (value.includes('-->')) return timed;
+    if (value.includes('-->') || isTimeline(value)) return timed;
     const pending = value
       .split(/\r?\n/)
       .filter((line) => !/\[\d+:[0-5]\d(?:\.\d{1,3})?\]/.test(line))
@@ -30,6 +31,7 @@ export function useSubtitleEditor(raw: Ref<string>, blocked: () => boolean) {
     ];
   }
   const items = ref<SubtitleCue[]>(readLines(raw.value));
+  let nextSegmentId = Math.max(0, ...items.value.map((cue) => cue.segmentId ?? 0)) + 1;
   const selectedIds = ref<string[]>([]);
   const selectedSet = computed(() => new Set(selectedIds.value));
   const selectedId = computed<string | null>({
@@ -98,9 +100,20 @@ export function useSubtitleEditor(raw: Ref<string>, blocked: () => boolean) {
     if (disabled.value) return;
     if (!transaction) remember(snapshot());
     items.value = next.slice().sort((first, second) => first.time - second.time);
+    if (isTimeline(raw.value)) {
+      const used = new Set<number>();
+      items.value = items.value.map((cue) => {
+        const segmentId =
+          cue.segmentId && !used.has(cue.segmentId) ? cue.segmentId : nextSegmentId++;
+        used.add(segmentId);
+        return { ...cue, segmentId };
+      });
+    }
     selectMany(typeof selection === 'string' ? [selection] : (selection ?? []));
     writing = true;
-    raw.value = serializeSrt(items.value);
+    raw.value = isTimeline(raw.value)
+      ? serializeTimeline(items.value, raw.value)
+      : serializeSrt(items.value);
     writing = false;
   }
   watch(
@@ -109,6 +122,10 @@ export function useSubtitleEditor(raw: Ref<string>, blocked: () => boolean) {
       if (writing) return;
       if (!transaction) remember({ ...snapshot(), raw: previous });
       items.value = readLines(value);
+      nextSegmentId = Math.max(
+        nextSegmentId,
+        ...items.value.map((cue) => (cue.segmentId ?? 0) + 1),
+      );
       selectedId.value = null;
     },
     { flush: 'sync' },
@@ -120,6 +137,16 @@ export function useSubtitleEditor(raw: Ref<string>, blocked: () => boolean) {
     const cue = items.value.find((item) => item.uid === uid);
     if (!cue || disabled.value) return false;
     const next = { ...cue, ...patch };
+    const delta = next.time - cue.time;
+    if (
+      next.text !== cue.text ||
+      next.subText !== cue.subText ||
+      next.thirdText !== cue.thirdText ||
+      Math.abs(next.endTime - cue.endTime - delta) > 0.000001
+    ) {
+      next.words = undefined;
+      next.confidence = undefined;
+    } else next.words = shiftWords(cue.words, delta);
     if (
       !Number.isFinite(next.time) ||
       !Number.isFinite(next.endTime) ||
@@ -156,6 +183,9 @@ export function useSubtitleEditor(raw: Ref<string>, blocked: () => boolean) {
     const length = Math.max(0.05, (original.endTime - original.time) / lines.length);
     const inserted = lines.map((line, offset) => ({
       ...original,
+      words: undefined,
+      confidence: undefined,
+      segmentId: offset === 0 ? original.segmentId : undefined,
       uid: offset === 0 ? uid : crypto.randomUUID(),
       text: line,
       subText: '',
@@ -173,6 +203,7 @@ export function useSubtitleEditor(raw: Ref<string>, blocked: () => boolean) {
         cue.uid,
         {
           ...cue,
+          words: shiftWords(cue.words, offset),
           time: Math.round((cue.time + offset) * 1000) / 1000,
           endTime: Math.round((cue.endTime + offset) * 1000) / 1000,
         },
@@ -191,6 +222,8 @@ export function useSubtitleEditor(raw: Ref<string>, blocked: () => boolean) {
     if (!selectedItems.value.length) return;
     const copies = selectedItems.value.map((cue) => ({
       ...cue,
+      segmentId: undefined,
+      words: shiftWords(cue.words, 0.35),
       uid: crypto.randomUUID(),
       time: cue.time + 0.35,
       endTime: cue.endTime + 0.35,
@@ -209,14 +242,64 @@ export function useSubtitleEditor(raw: Ref<string>, blocked: () => boolean) {
       cue.endTime - time < 0.05
     )
       return;
-    const right = { ...cue, uid: crypto.randomUUID(), time };
+    const chars = Array.from(cue.text);
+    if (chars.length < 2) return;
+    const boundary = Math.max(
+      1,
+      Math.min(
+        chars.length - 1,
+        Math.round((chars.length * (time - cue.time)) / (cue.endTime - cue.time)),
+      ),
+    );
+    const right = {
+      ...cue,
+      uid: crypto.randomUUID(),
+      segmentId: undefined,
+      time,
+      text: chars.slice(boundary).join(''),
+      words: undefined,
+      confidence: undefined,
+    };
     write(
       [
-        ...items.value.map((item) => (item.uid === cue.uid ? { ...item, endTime: time } : item)),
+        ...items.value.map((item) =>
+          item.uid === cue.uid
+            ? {
+                ...item,
+                endTime: time,
+                text: chars.slice(0, boundary).join(''),
+                words: undefined,
+                confidence: undefined,
+              }
+            : item,
+        ),
         right,
       ],
       right.uid,
     );
+  }
+  function merge() {
+    const selected = selectedItems.value;
+    if (selected.length < 2 || disabled.value) return;
+    const from = items.value.indexOf(selected[0]);
+    if (
+      !items.value
+        .slice(from, from + selected.length)
+        .every((cue) => selectedSet.value.has(cue.uid))
+    )
+      return;
+    const merged = {
+      ...selected[0],
+      endTime: Math.max(...selected.map((cue) => cue.endTime)),
+      text: selected
+        .map((cue) => [cue.text, cue.subText, cue.thirdText].filter(Boolean).join(' '))
+        .join(' '),
+      subText: '',
+      thirdText: '',
+      words: undefined,
+      confidence: undefined,
+    };
+    write([...items.value.filter((cue) => !selectedSet.value.has(cue.uid)), merged], merged.uid);
   }
   function replaceAll() {
     if (!search.value || disabled.value) return 0;
@@ -232,6 +315,8 @@ export function useSubtitleEditor(raw: Ref<string>, blocked: () => boolean) {
       text: replace(cue.text),
       subText: replace(cue.subText),
       thirdText: replace(cue.thirdText),
+      words: undefined,
+      confidence: undefined,
     }));
     if (count) write(next);
     return count;
@@ -288,6 +373,7 @@ export function useSubtitleEditor(raw: Ref<string>, blocked: () => boolean) {
     remove,
     duplicate,
     split,
+    merge,
     replaceAll,
     undo,
     redo,

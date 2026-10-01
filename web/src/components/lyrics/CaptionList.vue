@@ -72,6 +72,12 @@ watch(selectedId, async () => {
     <div class="caption-list-heading">
       <span>{{ visible.length }} 段字幕</span>
       <button
+        :disabled="disabled || editor.selectedItems.value.length < 2"
+        @click="editor.merge()"
+      >
+        合併所選字幕
+      </button>
+      <button
         :disabled="disabled"
         @click="editor.add(player.currentTime.value)"
       >
@@ -119,6 +125,40 @@ watch(selectedId, async () => {
           @input="text(cue, $event)"
           @blur="editor.commit()"
         />
+        <div class="caption-timing">
+          <label
+            >開始
+            <input
+              type="number"
+              min="0"
+              step="0.001"
+              :value="cue.time"
+              :disabled="disabled"
+              @change="
+                editor.update(cue.uid, { time: Number(($event.target as HTMLInputElement).value) })
+              "
+          /></label>
+          <label
+            >結束
+            <input
+              type="number"
+              min="0"
+              step="0.001"
+              :value="cue.endTime"
+              :disabled="disabled"
+              @change="
+                editor.update(cue.uid, {
+                  endTime: Number(($event.target as HTMLInputElement).value),
+                })
+              "
+          /></label>
+          <button
+            :disabled="disabled || !player.isLoaded.value"
+            @click="player.playRange(cue.time, cue.endTime)"
+          >
+            播放此句
+          </button>
+        </div>
       </article>
       <p
         v-if="!visible.length"
@@ -133,3 +173,16 @@ watch(selectedId, async () => {
     </div>
   </div>
 </template>
+
+<style scoped>
+.caption-timing {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  grid-column: 2;
+  font-size: 11px;
+}
+.caption-timing input {
+  width: 76px;
+}
+</style>

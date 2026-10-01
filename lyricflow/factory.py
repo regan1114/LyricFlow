@@ -17,8 +17,9 @@ from .errors import (
 from .job_store import JobStore
 from .process_runner import ProcessRunner
 from .processor import AlignmentProcessor
-from .routes import api, web
+from .routes import api, lyrics_api, web
 from .service import AlignmentService
+from .timeline.contract import TimelineError
 
 CSP = (
     "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; "
@@ -32,7 +33,7 @@ def create_app(settings=None, service=None):
     app.config.update(
         MAX_CONTENT_LENGTH=MAX_AUDIO_BYTES + 128 * 1024,
         MAX_FORM_MEMORY_SIZE=128 * 1024,
-        MAX_FORM_PARTS=3,
+        MAX_FORM_PARTS=5,
     )
     app.json.ensure_ascii = False
     if service is None:
@@ -42,6 +43,8 @@ def create_app(settings=None, service=None):
     app.extensions.update(alignment_service=service, settings=settings)
     atexit.register(service.close)
     app.register_blueprint(api)
+    app.register_blueprint(lyrics_api)
+    app.register_blueprint(lyrics_api, url_prefix="/api", name="lyrics_same_origin")
     app.register_blueprint(web)
 
     @app.before_request
@@ -76,6 +79,10 @@ def create_app(settings=None, service=None):
     @app.errorhandler(ValidationError)
     def invalid_input(error):
         return jsonify(error=str(error)), 400
+
+    @app.errorhandler(TimelineError)
+    def timeline_error(error):
+        return jsonify(error.data), 503 if error.data["code"] == "ENGINE_UNAVAILABLE" else 422
 
     @app.errorhandler(JobNotFoundError)
     def missing_job(error):

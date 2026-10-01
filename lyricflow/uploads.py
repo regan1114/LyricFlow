@@ -22,13 +22,16 @@ def text_field(request, name, limit):
     return value
 
 
-def multipart_input(request):
+def multipart_input(request, known=False):
     if request.mimetype != "multipart/form-data" or not request.mimetype_params.get("boundary"):
         raise UnsupportedMediaType("請使用 multipart/form-data，包含 audio 和 lyrics 欄位。")
     if not request.content_length:
         raise RequestEntityTooLarge("請提供 Content-Length；歌曲上限為 200 MB。")
     fields = list(request.form.keys()) + list(request.files.keys())
-    if set(fields) - {"audio", "lyrics", "threads"}:
+    allowed = {"audio", "lyrics", "threads"}
+    if known:
+        allowed |= {"preserve_lines", "separation"}
+    if set(fields) - allowed:
         raise ValidationError("僅接受 audio、lyrics、threads，每個欄位只能提供一次。")
     for name in set(fields):
         if len(request.form.getlist(name)) + len(request.files.getlist(name)) != 1:
@@ -41,8 +44,19 @@ def multipart_input(request):
     audio.stream.seek(0, 2)
     size = audio.stream.tell()
     audio.stream.seek(0)
+    options = {}
+    if known:
+        preserve = text_field(request, "preserve_lines", 8) or "true"
+        if preserve not in ("true", "false"):
+            raise ValidationError("preserve_lines 必須為 true 或 false。")
+        options = {
+            "mode": "known_lyrics",
+            "preserve_lines": preserve == "true",
+            "separation": text_field(request, "separation", 16) or "original",
+        }
     data = parse_job_input(
         {
+            **options,
             "name": audio.filename,
             "size": size,
             "lyrics": text_field(request, "lyrics", MAX_LYRICS_BYTES),

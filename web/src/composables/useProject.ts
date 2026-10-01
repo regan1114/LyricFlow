@@ -9,6 +9,7 @@ import { useProjectDraft } from './useProjectDraft';
 import type { useMediaSequence, SequenceAsset } from './useMediaSequence';
 import type { useMediaLibrary, LayerKind, VisualMedia } from './useMediaLibrary';
 import type { AudioPlayer } from './useAudioPlayer';
+import type { ImageRhythm } from '../domain/autoImages';
 interface ProjectContext {
   settings: StudioSettings;
   sceneSettings: SceneSettings;
@@ -17,6 +18,7 @@ interface ProjectContext {
   media: ReturnType<typeof useMediaLibrary>;
   player: AudioPlayer;
   raw: Ref<string>;
+  frozenImageRhythm?: Ref<ImageRhythm | null | undefined>;
   subtitleFilename: Ref<string>;
   busy: Ref<boolean>;
   blocked: () => boolean;
@@ -57,6 +59,9 @@ export function useProject(context: ProjectContext) {
         sceneSettings: { ...sceneSettings },
         exportSettings: { ...exportSettings },
         lyrics: raw.value,
+        ...(context.frozenImageRhythm?.value === undefined
+          ? {}
+          : { frozenImageRhythm: context.frozenImageRhythm.value }),
         subtitleFilename: subtitleFilename.value,
         visualMode: sequence.visualMode.value,
         linkSubtitles: sequence.linkSubtitles.value,
@@ -138,6 +143,7 @@ export function useProject(context: ProjectContext) {
       raw.value = manifest.lyrics;
       context.afterCommit();
       subtitleFilename.value = manifest.subtitleFilename;
+      if (context.frozenImageRhythm) context.frozenImageRhythm.value = manifest.frozenImageRhythm;
       player.volume.value = manifest.volume;
       committed = true;
       await nextTick();
@@ -192,6 +198,7 @@ export function useProject(context: ProjectContext) {
       sceneSettings,
       exportSettings,
       raw.value,
+      context.frozenImageRhythm?.value,
       subtitleFilename.value,
       sequence.assets.value.map(({ id, file, name, kind, duration }) => ({
         id,

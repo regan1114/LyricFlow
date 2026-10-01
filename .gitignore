@@ -66,3 +66,6 @@ htmlcov/
 /video_visual/
 !web/public/fonts/*-OFL.txt
 !web/public/scenes/*-attribution.txt
+.venv-alignment/
+!requirements-alignment.txt
+!requirements-separation.txt

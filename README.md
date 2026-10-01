@@ -44,6 +44,10 @@ LyricFlow 的 Web 視覺化編輯器以他提供的工具為基礎，整合字�
 
 操作與功能細節見 [Web 前端文件](web/README.md)。
 
+本機新增共用 **Lyrics Timeline Engine（Phase 1）**：提供正確歌詞的 forced alignment、
+JSON／SRT、逐字高亮與字幕微調，也可從 MyCut 建立獨立字幕軌。
+安裝與操作見 [共用歌詞時間軸](LYRICS_ENGINE.md)；長間奏建議啟用人聲分離。
+
 ## 線上版快速開始
 
 1. 開啟 [LyricFlow 線上工具](https://lyric-flow-seven.vercel.app/)，按「匯入音訊」加入歌曲。

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { reactive } from 'vue';
 import { createSettings } from '../../src/config/settings';
 import { createSceneSettings } from '../../src/config/scenes';
 import {
@@ -52,6 +53,25 @@ function project(): ProjectData {
   };
 }
 describe('portable project format', () => {
+  it('keeps timeline words and frozen image rhythm through portable files and IndexedDB cloning', async () => {
+    const data = project();
+    const timeline = {
+      version: '1.0.0',
+      mode: 'known_lyrics',
+      duration: 20,
+      segments: [
+        { id: 1, start: 1, end: 2, text: '月', words: [{ text: '月', start: 1, end: 2 }] },
+      ],
+    };
+    data.manifest.lyrics = JSON.stringify(timeline);
+    data.manifest.frozenImageRhythm = reactive({ starts: [0, 5, 10], duration: 20 });
+    const manifest = validateManifest(data.manifest, data.files.length);
+    expect(structuredClone(manifest)).toEqual(manifest);
+    const loaded = await unpackProject(packProject({ ...data, manifest }));
+    expect(JSON.parse(loaded.manifest.lyrics)).toEqual(timeline);
+    expect(loaded.manifest.frozenImageRhythm).toEqual(data.manifest.frozenImageRhythm);
+    expect(loaded.manifest.clips).toEqual(data.manifest.clips);
+  });
   it('opens older settings with retired slideshow fields without changing the timeline', () => {
     const data = project().manifest;
     const restored = validateManifest(

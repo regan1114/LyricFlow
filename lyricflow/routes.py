@@ -6,11 +6,14 @@ from pathlib import Path
 from flask import Blueprint, current_app, jsonify, request, send_file, send_from_directory
 from werkzeug.exceptions import NotFound, RequestEntityTooLarge, ServiceUnavailable
 
+from .timeline.contract import TimelineError
+from .timeline.runtime import readiness
 from .uploads import multipart_input, wait_requested
 from .validation import parse_job_input
 
 api = Blueprint("api", __name__, url_prefix="/api")
 web = Blueprint("web", __name__)
+lyrics_api = Blueprint("lyrics", __name__)
 
 
 def alignment_service():
@@ -21,6 +24,8 @@ def download(job_id, kind, direct=False):
     path, job = alignment_service().resource(job_id, kind)
     extension = ".srt" if direct else ".draft.srt"
     filename = Path(job["name"]).stem + (extension if kind == "srt" else ".review.txt")
+    if job.get("mode") == "known_lyrics" and kind in ("srt", "json"):
+        filename = "lyrics." + kind
     response = send_file(
         path,
         as_attachment=kind != "audio",
@@ -37,14 +42,61 @@ def download(job_id, kind, direct=False):
 
 @api.get("/health")
 def health():
-    return jsonify(app="lyric-flow", ready=current_app.extensions["settings"].ready)
+    return jsonify(
+        app="lyric-flow",
+        ready=current_app.extensions["settings"].ready,
+        alignment=readiness(current_app.extensions["settings"].root),
+    )
+
+
+@lyrics_api.get("/health")
+def lyrics_health():
+    return health()
+
+
+def require_alignment():
+    status = readiness(current_app.extensions["settings"].root)
+    if not status["ready"]:
+        raise TimelineError(
+            "ENGINE_UNAVAILABLE",
+            "歌詞對齊引擎尚未安裝。",
+            status["message"],
+            "執行 .venv/bin/python scripts/setup_alignment.py",
+        )
+
+
+@lyrics_api.post("/lyrics/align")
+def known_align():
+    should_wait = wait_requested(request)
+    data, stream = multipart_input(request, known=True)
+    require_alignment()
+    job = alignment_service().submit(data, stream)
+    if not should_wait:
+        return jsonify(job), 202
+    job = alignment_service().wait(job["id"])
+    if job["status"] == "done":
+        return jsonify(job["result"]["project"])
+    return jsonify(
+        job.get(
+            "error",
+            {
+                "code": "CANCELLED",
+                "message": job["message"],
+                "details": "",
+                "suggestion": "可重新開始對齊。",
+            },
+        )
+    ), 422
 
 
 @api.post("/jobs")
 def create_job():
     if not request.content_length or request.content_length > 65536:
         raise RequestEntityTooLarge("歌詞內容過長或空白。")
-    job = alignment_service().create(parse_job_input(request.get_json()))
+    data = parse_job_input(request.get_json())
+    if data.mode == "known_lyrics":
+        require_alignment()
+    job = alignment_service().create(data)
     return jsonify(job), 201
 
 
@@ -79,6 +131,11 @@ def audio_file(job_id):
 @api.get("/jobs/<job_id>/srt")
 def srt_file(job_id):
     return download(job_id, "srt")
+
+
+@api.get("/jobs/<job_id>/timeline")
+def timeline_file(job_id):
+    return download(job_id, "json")
 
 
 @api.get("/jobs/<job_id>/report")

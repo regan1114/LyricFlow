@@ -56,6 +56,9 @@ class JobStore:
             elapsed=round((job.get("finished") or time.time()) - job["created"], 1),
             status_url=f"/api/jobs/{job['id']}",
             srt_url=f"/api/jobs/{job['id']}/srt" if job["status"] == "done" else None,
+            json_url=f"/api/jobs/{job['id']}/timeline"
+            if job["status"] == "done" and job.get("mode") == "known_lyrics"
+            else None,
         )
         return public
 

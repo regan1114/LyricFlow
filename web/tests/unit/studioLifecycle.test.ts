@@ -214,6 +214,7 @@ function recordingHarness() {
     initAudio: vi.fn(async () => {}),
     setTimeline: vi.fn(),
     play: vi.fn(async () => {}),
+    playRange: vi.fn(async () => {}),
     pause: vi.fn(),
     toggle: vi.fn(async () => {}),
     seek: vi.fn(),

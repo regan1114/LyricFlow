@@ -172,3 +172,70 @@ test('reimporting the same subtitle file also refreshes a previously edited dial
   await page.getByRole('button', { name: '自動辨識', exact: true }).click();
   await expect(page.getByRole('textbox', { name: '歌詞', exact: true })).toHaveValue('原有字幕');
 });
+
+test('known lyrics keeps words through JSON, supports sentence playback and edited SRT export', async ({
+  page,
+}) => {
+  const timeline = {
+    version: '1.0.0',
+    mode: 'known_lyrics',
+    duration: 4,
+    segments: [
+      {
+        id: 1,
+        start: 1,
+        end: 2,
+        text: '月滿',
+        words: [
+          { text: '月', start: 1, end: 1.5 },
+          { text: '滿', start: 1.5, end: 2 },
+        ],
+      },
+    ],
+  };
+  await mock(page);
+  await page.route('**/api/health', (route) =>
+    route.fulfill({ json: { alignment: { ready: true } } }),
+  );
+  await page.route('**/api/jobs', (route) => {
+    expect(route.request().postDataJSON()).toMatchObject({ mode: 'known_lyrics', lyrics: '月滿' });
+    return route.fulfill({ status: 201, json: { id: 'known-job' } });
+  });
+  await page.route('**/api/jobs/*/timeline', (route) => route.fulfill({ json: timeline }));
+  await page.goto('/');
+  await page.locator('.preview-stage').hover({ position: { x: 10, y: 10 } });
+  await song(page);
+  await page.getByRole('button', { name: '精準歌詞對齊', exact: true }).click();
+  await page.getByRole('textbox', { name: '歌詞', exact: true }).fill('月滿');
+  await page.getByRole('button', { name: '分析並對齊歌詞' }).click();
+  await expect(page.getByRole('status').filter({ hasText: '對齊完成' })).toBeVisible();
+  await page.getByRole('button', { name: '完成', exact: true }).click();
+  await expect(page.getByLabel('字幕 1 文字', { exact: true })).toHaveValue('月滿');
+  const downloadPromise = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'JSON', exact: true }).click();
+  const download = await downloadPromise;
+  const stream = await download.createReadStream();
+  const buffers: Buffer[] = [];
+  for await (const chunk of stream!) buffers.push(Buffer.from(chunk));
+  expect(JSON.parse(Buffer.concat(buffers).toString()).segments[0].words).toEqual(
+    timeline.segments[0].words,
+  );
+  await page.getByRole('button', { name: '播放此句' }).click();
+  await expect(page.getByRole('button', { name: '暫停', exact: true })).toBeVisible();
+  await expect(page.getByRole('slider', { name: '時間軸播放位置' })).toHaveValue('2');
+  await page.locator('.preview-stage').hover({ position: { x: 10, y: 10 } });
+  await expect(page.getByRole('button', { name: '播放', exact: true })).toBeVisible({
+    timeout: 5000,
+  });
+  const end = page.locator('.caption-timing').getByLabel('結束');
+  await end.fill('2.5');
+  await end.blur();
+  const srtPromise = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'SRT', exact: true }).click();
+  const srt = await srtPromise;
+  const srtStream = await srt.createReadStream();
+  const srtBuffers: Buffer[] = [];
+  for await (const chunk of srtStream!) srtBuffers.push(Buffer.from(chunk));
+  expect(Buffer.concat(srtBuffers).toString()).toContain('00:00:01,000 --> 00:00:02,500');
+  await page.screenshot({ path: 'test-results/known-lyrics-editor.png', fullPage: true });
+});

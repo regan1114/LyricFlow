@@ -7,6 +7,8 @@ import {
 import { createSceneSettings, sceneSettingFields, type SceneSettings } from '../config/scenes';
 import { createExportSettings, type ExportSettings } from '../config/export';
 import { validateClip, type MediaClip, type MediaKind } from './mediaSequence';
+import { isTimeline, validateProject } from './lyricsTimeline';
+import type { ImageRhythm } from './autoImages';
 
 export interface ProjectAsset {
   id: string;
@@ -21,6 +23,7 @@ export interface ProjectManifest {
   sceneSettings: SceneSettings;
   exportSettings: ExportSettings;
   lyrics: string;
+  frozenImageRhythm?: ImageRhythm | null;
   subtitleFilename: string;
   visualMode: 'auto' | 'manual';
   linkSubtitles: boolean;
@@ -112,6 +115,25 @@ export function validateManifest(value: unknown, fileCount: number): ProjectMani
     data.volume > 1
   )
     fail();
+  if (isTimeline(data.lyrics as string)) validateProject(JSON.parse(data.lyrics as string));
+  const rhythm = data.frozenImageRhythm as ImageRhythm | null | undefined;
+  if (
+    rhythm !== undefined &&
+    rhythm !== null &&
+    (!Array.isArray(rhythm.starts) ||
+      rhythm.starts.length < 2 ||
+      !Number.isFinite(rhythm.duration) ||
+      rhythm.duration <= 0 ||
+      rhythm.starts[0] !== 0 ||
+      !rhythm.starts.every(
+        (start, index) =>
+          Number.isFinite(start) &&
+          start >= 0 &&
+          start < rhythm.duration &&
+          (!index || start > rhythm.starts[index - 1]),
+      ))
+  )
+    fail();
   const fileIndex = (value: unknown): value is number =>
     Number.isInteger(value) && Number(value) >= 0 && Number(value) < fileCount;
   if (!Array.isArray(data.assets) || !Array.isArray(data.clips)) return fail();
@@ -160,6 +182,12 @@ export function validateManifest(value: unknown, fileCount: number): ProjectMani
     sceneSettings: validateSceneSettings(data.sceneSettings),
     exportSettings: validateExportSettings(data.exportSettings),
     lyrics: data.lyrics as string,
+    ...(rhythm === undefined
+      ? {}
+      : {
+          frozenImageRhythm:
+            rhythm === null ? null : { starts: [...rhythm.starts], duration: rhythm.duration },
+        }),
     subtitleFilename: data.subtitleFilename as string,
     visualMode: data.visualMode as 'auto' | 'manual',
     linkSubtitles: data.linkSubtitles as boolean,

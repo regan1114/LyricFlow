@@ -157,3 +157,51 @@ API 回傳目前工作儲存的字幕，保留原歌詞與 Suno 標記清理規�
 
 伺服器使用專案 `.venv` 的 Python 3.12 以上、Flask 3.1.3 與 Werkzeug；multipart 上傳由框架處理。
 模組責任請見 [架構說明](ARCHITECTURE.md)。
+
+## Phase 1：正確歌詞 Forced Alignment
+
+此端點使用已知文字的聲學對齊，與前述舊 ASR 比對支線獨立。
+先依 [安裝與使用方式](LYRICS_ENGINE.md) 安裝引擎；`GET /health` 或 `/api/health`
+的 `alignment.ready` 回報新引擎是否已安裝；頂層 `ready` 仍指舊 ASR。
+
+```sh
+curl -f 'http://127.0.0.1:8080/lyrics/align?wait=true' \
+  -F 'audio=@song.mp3' \
+  -F 'lyrics=<lyrics.txt' \
+  -F 'preserve_lines=true' \
+  -F 'separation=demucs' \
+  -o lyrics.json
+```
+
+同步成功直接回傳共用 `LyricProject`；省略 `wait=true` 回傳 `202` 工作資料。
+`/api/lyrics/align` 為同源等價端點。預設 `preserve_lines=true`、`separation=original`。
+`original` 不執行人聲分離；`demucs` 需另安裝，其失敗不會偷偷回退原音。
+
+兩步串流 API `/api/jobs` 可傳 `{name,size,lyrics,threads,mode:"known_lyrics",preserve_lines,separation}`，
+接著使用既有音訊上傳、查詢與取消端點。完成後 `result.project` 包含共用 JSON，
+`GET /api/jobs/{id}/timeline` 下載 `lyrics.json`，`GET /api/jobs/{id}/srt` 下載 `lyrics.srt`。
+新模式不接受舊 `/retry`；更換輸入後重新提交，未變部分可重用 cache。
+
+```json
+{
+  "version": "1.0.0",
+  "duration": 40.0,
+  "mode": "known_lyrics",
+  "segments": [{"id": 1, "start": 14.7, "end": 19.9, "text": "月滿，歸來。"}]
+}
+```
+
+`confidence`、`words` 可省略。`words` 使用絕對秒數，文字串接必須完整等於該句，
+時間需在句內且不重疊；格式由 `packages/lyrics-timeline` 及 Python contract 驗證。
+句子可重疊但須依 start 排序；SRT 毫秒格式只在匯出時產生。
+後端產物不會自動反映編輯器後續修改，請從編輯器匯出目前版本。
+
+工作進度包含 `{stage,progress,percent}`，`progress` 介於 0–1、`percent` 介於 0–100。
+階段包含 `preparing`、`separating_vocals`、`vocal_activity`、`loading_alignment`、`alignment`、`exporting`；
+原音支線顯示 `original_audio`，完整快取顯示 `timeline_cached`。
+失敗的工作有 `error: {code,message,details,suggestion}`；同步失敗回傳此結構與 `422`，
+未安裝回 `503`。常見代碼：`MODEL_LOAD_FAILED`、`VOCAL_MODEL_MISSING`、`VOCAL_SEPARATION_FAILED`、
+`AUDIO_DECODE_FAILED`、`ALIGNMENT_INCOMPLETE`、`ALIGNMENT_LOW_CONFIDENCE`、`ALIGNMENT_LONG_GAP`。
+
+新模式限制為 **10 分鐘**；其餘上傳與本機來源限制沿用。
+`/lyrics/transcribe` 與 `/lyrics/hybrid` 留待 Phase 2／3，尚未提供。

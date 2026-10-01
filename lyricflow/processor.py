@@ -11,6 +11,7 @@ from imageio_ffmpeg import get_ffmpeg_exe
 from .config import MAX_AUDIO_SECONDS
 from .errors import ProcessingError
 from .progress import PROGRESS_PREFIX, progress_message
+from .timeline.runtime import python_path
 
 logger = logging.getLogger(__name__)
 
@@ -68,6 +69,9 @@ class AlignmentProcessor:
             if self.store.is_terminal(job_id):
                 return
             job = self.store.get(job_id)
+            if job.get("mode") == "known_lyrics":
+                self._known_lyrics(job)
+                return
             prepared = self._prepare_audio(job)
             if prepared is None:
                 return
@@ -118,3 +122,42 @@ class AlignmentProcessor:
                 else "處理未完成。請重新嘗試，詳細紀錄保留在本機。"
             )
             self.store.update(job_id, status="error", message=message)
+
+    def _known_lyrics(self, job):
+        job_id = job["id"]
+        folder = self.store.folder(job_id).resolve()
+        self.store.update(job_id, status="processing")
+        try:
+            args = [
+                str(python_path(self.settings.root)),
+                "-u",
+                str(self.settings.root / "lyrics_timeline.py"),
+                str(folder),
+            ]
+            if not self.runner.run(job_id, args, lambda line: self._record_progress(job_id, line)):
+                return
+            project = json.loads((folder / "output/lyrics.json").read_text(encoding="utf-8"))
+            self.store.update(
+                job_id,
+                status="done",
+                message="對齊完成，請播放檢查歌唱邊界。",
+                progress={"stage": "done", "progress": 1, "percent": 100},
+                result={
+                    "project": project,
+                    "review_count": len(project["segments"]),
+                    "unmatched_count": 0,
+                },
+            )
+        except Exception as error:
+            failure_path = folder / "failure.json"
+            failure = (
+                json.loads(failure_path.read_text(encoding="utf-8"))
+                if failure_path.exists()
+                else {
+                    "code": "ENGINE_UNAVAILABLE",
+                    "message": "無法啟動歌詞對齊引擎。",
+                    "details": str(error),
+                    "suggestion": "請執行 scripts/setup_alignment.py 安裝獨立環境與模型。",
+                }
+            )
+            self.store.update(job_id, status="error", message=failure["message"], error=failure)

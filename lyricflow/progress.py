@@ -4,6 +4,13 @@ import json
 
 PROGRESS_PREFIX = "LYRIC_FLOW_PROGRESS "
 STAGE_MESSAGES = {
+    "original_audio": "使用原始音訊對齊（未分離人聲）…",
+    "separating_vocals": "正在分離人聲…",
+    "vocal_activity": "正在分析人聲區段與間奏…",
+    "loading_alignment": "正在載入歌詞對齊模型…",
+    "analyzing_audio": "正在分析歌曲聲學特徵…",
+    "alignment": "正在進行歌詞時間對齊…",
+    "timeline_cached": "已重用歌詞時間軸快取。",
     "preparing": "正在準備音訊…",
     "recognizing": "正在辨識歌曲…",
     "cached": "找到歌曲快取，已完成辨識。",

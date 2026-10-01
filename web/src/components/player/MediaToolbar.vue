@@ -58,7 +58,7 @@ function importMedia(kind: 'audio' | 'background', files: File[]) {
       />
       <FileUpload
         label="匯入字幕"
-        accept=".lrc,.srt,.txt"
+        accept=".lrc,.srt,.txt,.json"
         :disabled="isRecording"
         @select="importFiles('subtitles', $event)"
       />

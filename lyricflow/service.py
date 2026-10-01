@@ -62,6 +62,8 @@ class AlignmentService:
 
     def retry(self, job_id, data):
         original = self.get(job_id)
+        if original.get("mode") == "known_lyrics":
+            raise ValidationError("精準對齊請重新提交歌詞，或在字幕軌手動修正。")
         if original["status"] != "done":
             raise JobConflictError("請等待歌曲處理完成後再補辨識。")
         rows = retry_rows(data, original["result"]["lines"], original["result"]["duration"])
@@ -132,6 +134,12 @@ class AlignmentService:
         folder = self.store.folder(job_id)
         if kind == "audio" and job["status"] != "uploading":
             path = folder / ("source" + Path(job["name"]).suffix.lower())
+        elif (
+            kind in ("srt", "json")
+            and job["status"] == "done"
+            and job.get("mode") == "known_lyrics"
+        ):
+            path = folder / "output" / ("lyrics." + kind)
         elif kind in ("srt", "report") and job["status"] == "done":
             extension = ".draft.srt" if kind == "srt" else ".review.txt"
             path = next((folder / "output").glob("*" + extension), None)

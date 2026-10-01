@@ -1,0 +1,9 @@
+{
+  "name": "@lyricflow/lyrics-timeline",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "exports": { "types": "./dist/index.d.ts", "import": "./dist/index.js" },
+  "files": ["dist"],
+  "scripts": { "build": "../../web/node_modules/.bin/tsc index.ts --target ES2022 --module ESNext --moduleResolution bundler --declaration --outDir dist --skipLibCheck" }
+}

@@ -1,3 +1,4 @@
+import { drawWordHighlight } from '../wordHighlight';
 import { complementaryColor } from '../colors';
 import { createTextCache } from '../textBitmap';
 import { smoothingFactor } from '../animation';
@@ -161,7 +162,7 @@ export function drawLyrics(frame: RenderFrame, runtime: RenderRuntime) {
       frame.parsedLyrics.forEach((cue, cueIndex) => {
         const start = isNaN(cue.time) ? 0 : cue.time;
         const end = isNaN(cue.endTime) ? start + 6 : cue.endTime;
-        if (frame.currentTime >= start - 0.1 && frame.currentTime <= end + 0.1) {
+        if (frame.currentTime >= start && frame.currentTime < end) {
           let transition = 1;
           let exiting = false;
           const elapsed = frame.currentTime - start;
@@ -334,6 +335,7 @@ export function drawLyrics(frame: RenderFrame, runtime: RenderRuntime) {
               }
             }
           }
+          drawWordHighlight(context, bitmap, cue, frame.currentTime, drawX, drawY);
           if (frame.showKaraokeBall) {
             drawKaraokeBall(context, bitmap, drawX, drawY, progress, frame.themeColor);
           }
