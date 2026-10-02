@@ -80,4 +80,5 @@ MyCut 在第一端測試通過後，以 Express 固定 loopback 代理及 second
 
 這些結果驗證可執行、原文、順序、前奏與長間奏案例，**不是全曲人工標記的精度認證**。
 尚無使用者指定的全曲正確歌詞／人工時間基準；歌唱結果仍需試聽微調。
+人工基準資料格式、逐句／逐字計分和標籤分組流程見 [評估指南](evaluation/timeline/README.md)。
 Phase 2 新 audio-only 引擎與 `/lyrics/transcribe`、Phase 3 hybrid 尚未實作；保留既有 ASR。

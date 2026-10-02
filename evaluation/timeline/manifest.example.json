@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "cases": [
+    {
+      "id": "replace-with-case-id",
+      "audio": "cases/replace-with-case-id/audio.wav",
+      "lyrics": "cases/replace-with-case-id/lyrics.txt",
+      "reference": "cases/replace-with-case-id/reference.json",
+      "preserve_lines": true,
+      "tags": ["genre", "vocal-style", "acoustic-condition"]
+    }
+  ]
+}
