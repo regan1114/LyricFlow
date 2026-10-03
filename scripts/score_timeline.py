@@ -173,8 +173,7 @@ def score_case(case, prediction_path):
         )
         expected_words, actual_words = expected.get("words", []), actual.get("words", [])
         if len(expected_words) != len(actual_words) or any(
-            first["text"] != second["text"]
-            for first, second in zip(expected_words, actual_words)
+            first["text"] != second["text"] for first, second in zip(expected_words, actual_words)
         ):
             continue
         result["matched_words"] += len(expected_words)
@@ -184,7 +183,9 @@ def score_case(case, prediction_path):
             )
     result["success"] = len(actual_segments) == len(expected_segments) and not text_mismatches
     if len(actual_segments) != len(expected_segments):
-        result["error"] = f"字幕段數不同：預測 {len(actual_segments)}，標註 {len(expected_segments)}。"
+        result["error"] = (
+            f"字幕段數不同：預測 {len(actual_segments)}，標註 {len(expected_segments)}。"
+        )
     elif text_mismatches:
         result["error"] = f"有 {text_mismatches} 段字幕文字與標註不一致。"
     return result
@@ -194,9 +195,7 @@ def prediction_runs(root):
     direct = list(root.glob("*.json"))
     if direct:
         return [("default", root)]
-    runs = sorted(
-        path for path in root.iterdir() if path.is_dir() and list(path.glob("*.json"))
-    )
+    runs = sorted(path for path in root.iterdir() if path.is_dir() and list(path.glob("*.json")))
     if not runs:
         raise BenchmarkError("預測目錄中找不到 JSON；請使用 <預測目錄>/<case-id>.json。")
     return [(path.name, path) for path in runs]
