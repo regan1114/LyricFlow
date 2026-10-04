@@ -179,6 +179,8 @@ Setup verifies downloads, builds whisper.cpp and stores the engine and model in 
 .venv/bin/python app.py --open
 ```
 
+On macOS, you can also double-click `start-mac.command` in the repository root.
+
 Open `http://127.0.0.1:8080`. Keep the terminal running while using the app; press Ctrl+C to stop it.
 
 To upgrade an existing environment, stop the service and rename the old `.venv` as a backup, then repeat the `venv` and dependency installation commands with your chosen Python 3.12+ executable. Virtual environments do not upgrade when the system Python changes. The engine and models in `.local/` can be reused. Python 3.13+ automatically installs `audioop-lts` to preserve the existing PCM conversion behavior.

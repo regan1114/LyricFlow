@@ -183,6 +183,8 @@ python app.py --open
 .venv/bin/python app.py --open
 ```
 
+macOS 也可以在 Finder 雙擊專案根目錄的 `start-mac.command` 啟動。
+
 瀏覽器開啟 `http://127.0.0.1:8080`。使用期間保留終端機，按 Ctrl+C 關閉服務。
 
 升級既有環境時，先停止服務並將舊 `.venv` 改名備份，再使用所選的 Python 3.12 以上版本重跑上述 `venv` 與套件安裝指令。虛擬環境不會隨系統 Python 自動升級；`.local/` 中的辨識引擎與模型可繼續使用。Python 3.13 以上會自動安裝 `audioop-lts`，保留原有 PCM 音訊轉換行為。
