@@ -240,6 +240,80 @@ describe('media sequence', () => {
     expect(sources[0].stop).toHaveBeenCalledOnce();
     expect(gains[1].disconnect).toHaveBeenCalledOnce();
   });
+  it('undoes and redoes linked timing without discarding later text edits', async () => {
+    const { sequence, editor } = setup();
+    await sequence.importFiles([new File(['ab'], 'song.wav')], 'audio');
+    sequence.addAll();
+    sequence.linkSubtitles.value = true;
+    sequence.update(sequence.selectedId.value!, { start: 1 });
+    editor.update(editor.items.value[0].uid, { text: 'edited linked cue' });
+    editor.update(editor.items.value[1].uid, { text: 'edited unrelated cue' });
+    sequence.undo();
+    expect(editor.items.value.map((cue) => cue.time)).toEqual([0.5, 3]);
+    expect(editor.items.value.map((cue) => cue.text)).toEqual([
+      'edited linked cue',
+      'edited unrelated cue',
+    ]);
+    sequence.redo();
+    expect(editor.items.value.map((cue) => cue.time)).toEqual([1.5, 3]);
+    expect(editor.items.value.map((cue) => cue.text)).toEqual([
+      'edited linked cue',
+      'edited unrelated cue',
+    ]);
+  });
+  it('does not restore deleted or independently retimed subtitles through media history', async () => {
+    const { sequence, editor } = setup();
+    await sequence.importFiles([new File(['abcd'], 'song.wav')], 'audio');
+    sequence.addAll();
+    sequence.linkSubtitles.value = true;
+    sequence.update(sequence.selectedId.value!, { start: 1 });
+    editor.update(editor.items.value[0].uid, { time: 2, endTime: 3 });
+    editor.selectedId.value = editor.items.value[1].uid;
+    editor.remove();
+    sequence.undo();
+    sequence.redo();
+    expect(editor.items.value).toHaveLength(1);
+    expect(editor.items.value[0]).toMatchObject({ time: 2, endTime: 3 });
+  });
+  it('does not apply old linked timings to a newly imported subtitle document', async () => {
+    const { sequence, raw, editor } = setup();
+    const document = {
+      version: '1.0.0',
+      mode: 'known_lyrics',
+      duration: 4,
+      segments: [{ id: 1, start: 0.5, end: 1.5, text: 'original' }],
+    };
+    raw.value = JSON.stringify(document);
+    await sequence.importFiles([new File(['ab'], 'song.wav')], 'audio');
+    sequence.addAll();
+    sequence.linkSubtitles.value = true;
+    sequence.update(sequence.selectedId.value!, { start: 1 });
+    // Timeline imports reuse segment IDs and may have the same times as the old move.
+    raw.value = JSON.stringify({
+      ...document,
+      segments: [{ id: 1, start: 1.5, end: 2.5, text: 'new imported cue' }],
+    });
+    const imported = raw.value;
+    sequence.undo();
+    sequence.redo();
+    expect(raw.value).toBe(imported);
+    expect(editor.items.value[0].text).toBe('new imported cue');
+  });
+  it('keeps a locked linked undo pending until subtitles are unlocked', async () => {
+    const { sequence, editor } = setup();
+    await sequence.importFiles([new File(['ab'], 'song.wav')], 'audio');
+    sequence.addAll();
+    sequence.linkSubtitles.value = true;
+    sequence.update(sequence.selectedId.value!, { start: 1 });
+    editor.locked.value = true;
+    sequence.undo();
+    expect(sequence.clips.value[0].start).toBe(1);
+    expect(editor.items.value[0].time).toBe(1.5);
+    editor.locked.value = false;
+    sequence.undo();
+    expect(sequence.clips.value[0].start).toBe(0);
+    expect(editor.items.value[0].time).toBe(0.5);
+  });
   it('computes audio windows and validates media-only duration boundaries', () => {
     setup();
     const clip: MediaClip = {

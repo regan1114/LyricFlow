@@ -26,7 +26,8 @@ const blocked = computed(
     lyrics.isSyncing.value ||
     studio.project.busy.value ||
     sequence.busy.value > 0 ||
-    recognition.busy.value,
+    recognition.busy.value ||
+    recognition.checkingExistingJob.value,
 );
 
 async function open(mode: 'legacy' | 'known_lyrics' = 'legacy') {
@@ -206,6 +207,43 @@ async function submit(confirmed = false) {
         {{ notice || recognition.error.value }}
       </p>
       <div
+        v-if="recognition.existingJob.value"
+        class="replace-warning"
+      >
+        <p>既有工作：{{ recognition.existingJob.value.name || '辨識工作' }}</p>
+        <p role="status">{{ recognition.existingJob.value.message }}</p>
+        <div class="recognition-actions">
+          <button
+            type="button"
+            :disabled="blocked"
+            @click="recognition.refreshExistingJob"
+          >
+            查看工作狀態
+          </button>
+          <button
+            v-if="!['done', 'error', 'cancelled'].includes(recognition.existingJob.value.status)"
+            type="button"
+            :disabled="blocked"
+            @click="recognition.cancelExistingJob"
+          >
+            停止既有工作
+          </button>
+          <template v-if="recognition.existingJob.value.status === 'done'">
+            <a
+              :href="`/api/jobs/${recognition.existingJob.value.id}/srt`"
+              download
+              >下載既有字幕</a
+            >
+            <a
+              v-if="recognition.existingJob.value.mode === 'known_lyrics'"
+              :href="`/api/jobs/${recognition.existingJob.value.id}/timeline`"
+              download
+              >下載逐字 JSON</a
+            >
+          </template>
+        </div>
+      </div>
+      <div
         v-if="confirming"
         role="alertdialog"
         aria-labelledby="replace-title"
@@ -264,7 +302,7 @@ async function submit(confirmed = false) {
             <button
               v-if="!completed"
               type="submit"
-              :disabled="!text.trim()"
+              :disabled="blocked || !text.trim()"
             >
               {{ source === 'known_lyrics' ? '分析並對齊歌詞' : '送出' }}
             </button>
@@ -302,6 +340,7 @@ p {
 p {
   font-size: 14px;
   line-height: 1.6;
+  overflow-wrap: anywhere;
 }
 select,
 textarea {
@@ -321,6 +360,7 @@ progress {
 }
 .recognition-actions {
   display: flex;
+  flex-wrap: wrap;
   justify-content: flex-end;
   gap: 12px;
 }

@@ -190,7 +190,8 @@ export function useProject(context: ProjectContext) {
   const drafts = useProjectDraft({
     capture,
     open,
-    blocked: () => busy.value || context.blocked() || sequence.busy.value > 0,
+    blocked: () =>
+      busy.value || context.blocked() || sequence.busy.value > 0 || media.initializing.value,
   });
   watch(
     () => [
@@ -210,7 +211,7 @@ export function useProject(context: ProjectContext) {
       sequence.clips.value,
       sequence.visualMode.value,
       sequence.linkSubtitles.value,
-      media.layerFiles.value,
+      media.layerRevision.value,
       player.volume.value,
     ],
     drafts.changed,

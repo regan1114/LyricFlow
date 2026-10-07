@@ -6,11 +6,22 @@ import { mapTimeline, validateProject } from '../domain/lyricsTimeline';
 
 interface Job {
   id: string;
+  name?: string;
+  mode?: string;
   status: string;
   message: string;
   progress?: { percent: number | null };
   result?: { unmatched_count: number; review_count: number };
   error?: { code: string; message: string; details: string; suggestion: string };
+}
+
+class JobRequestError extends Error {
+  constructor(
+    message: string,
+    readonly jobId?: string,
+  ) {
+    super(message);
+  }
 }
 
 async function request(path: string, options?: RequestInit) {
@@ -23,10 +34,11 @@ async function request(path: string, options?: RequestInit) {
     const response = await fetch(path, { ...options, signal: controller.signal });
     if (!response.ok) {
       const body = await response.json().catch(() => null);
-      throw new Error(
+      throw new JobRequestError(
         body?.message
           ? `${body.message} ${body.suggestion || ''}`
           : body?.error || `辨識服務連線失敗（${response.status}）。`,
+        response.status === 409 && /^[a-f0-9]{32}$/.test(body?.job_id) ? body.job_id : undefined,
       );
     }
     return response;
@@ -45,11 +57,48 @@ export function useAutoRecognition(busy: Ref<boolean>) {
   const percent = ref<number | null>(null);
   const error = ref('');
   const cancelling = ref(false);
+  const existingJob = ref<Job | null>(null);
+  const checkingExistingJob = ref(false);
   let jobId = '';
   let disposed = false;
   let transfer: AbortController | undefined;
   let cancelConfirmed = false;
   let cancellation: Promise<void> | undefined;
+
+  async function refreshExistingJob() {
+    const id = existingJob.value?.id;
+    if (!id || checkingExistingJob.value || disposed) return;
+    checkingExistingJob.value = true;
+    try {
+      const job: Job = await (await request(`/api/jobs/${id}`)).json();
+      if (!disposed && existingJob.value?.id === id) existingJob.value = job;
+    } catch (cause) {
+      if (!disposed) error.value = cause instanceof Error ? cause.message : '無法查詢既有工作。';
+    } finally {
+      checkingExistingJob.value = false;
+    }
+  }
+  async function cancelExistingJob() {
+    const id = existingJob.value?.id;
+    if (!id || busy.value || checkingExistingJob.value || disposed) return;
+    checkingExistingJob.value = true;
+    try {
+      const job: Job = await (await request(`/api/jobs/${id}/cancel`, { method: 'POST' })).json();
+      if (!disposed && existingJob.value?.id === id) {
+        existingJob.value = job;
+        error.value = '';
+        message.value =
+          job.status === 'done'
+            ? '既有工作已完成，可下載結果。'
+            : '既有工作已停止，可以重新送出歌曲。';
+      }
+    } catch (cause) {
+      if (!disposed)
+        error.value = `停止既有工作失敗：${cause instanceof Error ? cause.message : '請稍後重試。'}`;
+    } finally {
+      checkingExistingJob.value = false;
+    }
+  }
 
   async function cancelJob() {
     if (!jobId) return;
@@ -88,9 +137,10 @@ export function useAutoRecognition(busy: Ref<boolean>) {
       error.value = '此版本未提供自動辨識，請匯入字幕或使用手動對時。';
       return false;
     }
-    if (busy.value || disposed) return false;
+    if (busy.value || checkingExistingJob.value || disposed) return false;
     busy.value = true;
     error.value = '';
+    existingJob.value = null;
     message.value = '正在檢查辨識服務…';
     percent.value = null;
     cancelling.value = false;
@@ -195,6 +245,15 @@ export function useAutoRecognition(busy: Ref<boolean>) {
     } catch (cause) {
       if (!cancelling.value && !disposed)
         error.value = cause instanceof Error ? cause.message : '辨識服務連線失敗。';
+      if (!cancelling.value && !disposed && cause instanceof JobRequestError && cause.jobId) {
+        message.value = '請先查看既有工作的狀態，再重新送出歌曲。';
+        existingJob.value = {
+          id: cause.jobId,
+          status: 'unknown',
+          message: '可查看狀態或停止既有工作後重試。',
+        };
+        await refreshExistingJob();
+      }
       try {
         await cancelJob();
       } catch {
@@ -217,5 +276,17 @@ export function useAutoRecognition(busy: Ref<boolean>) {
     disposed = true;
     void cancel();
   });
-  return { busy, message, percent, error, cancelling, start, cancel };
+  return {
+    busy,
+    message,
+    percent,
+    error,
+    cancelling,
+    existingJob,
+    checkingExistingJob,
+    refreshExistingJob,
+    cancelExistingJob,
+    start,
+    cancel,
+  };
 }

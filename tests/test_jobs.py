@@ -6,7 +6,9 @@ import tempfile
 import threading
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
+from lyricflow.config import UPLOAD_WAIT_SECONDS
 from lyricflow.errors import JobBusyError, JobConflictError, ValidationError
 from lyricflow.job_store import JobStore
 from lyricflow.process_runner import ProcessRunner
@@ -52,6 +54,55 @@ class JobStoreTests(unittest.TestCase):
         before = self.store.get(job["id"])
         self.assertFalse(self.store.update(job["id"], status="done", progress={"percent": 100}))
         self.assertEqual(self.store.get(job["id"]), before)
+
+    def test_abandoned_upload_expires_and_releases_slot(self):
+        job = self.store.create(job_input())
+        with patch(
+            "lyricflow.job_store.time.time", return_value=job["created"] + UPLOAD_WAIT_SECONDS
+        ):
+            replacement = self.store.create(job_input())
+            expired = self.store.get(job["id"])
+            self.assertNotEqual(job["id"], replacement["id"])
+            self.assertEqual(expired["status"], "error")
+            self.assertIn("上傳逾時", expired["message"])
+            with self.assertRaises(JobConflictError):
+                self.store.claim_upload(job["id"], 20)
+            self.assertFalse(self.store.update(job["id"], status="preparing"))
+            self.assertEqual(JobStore(self.store.directory).get(job["id"])["status"], "error")
+
+    def test_active_upload_and_processing_do_not_expire(self):
+        job = self.store.create(job_input())
+        self.store.claim_upload(job["id"], 20)
+        with patch(
+            "lyricflow.job_store.time.time", return_value=job["created"] + UPLOAD_WAIT_SECONDS + 1
+        ):
+            self.assertEqual(self.store.get(job["id"])["status"], "uploading")
+            with self.assertRaises(JobBusyError):
+                self.store.create(job_input())
+            self.store.update(job["id"], status="processing")
+            self.store.release_upload(job["id"])
+            self.assertEqual(self.store.get(job["id"])["status"], "processing")
+            with self.assertRaises(JobBusyError):
+                self.store.create(job_input())
+
+    def test_status_and_late_upload_expire_without_another_submission(self):
+        job = self.store.create(job_input())
+        with patch(
+            "lyricflow.job_store.time.time", return_value=job["created"] + UPLOAD_WAIT_SECONDS
+        ):
+            with self.assertRaises(JobConflictError):
+                self.store.claim_upload(job["id"], 20)
+            self.assertEqual(self.store.get(job["id"])["status"], "error")
+
+    def test_waiter_wakes_when_an_unclaimed_upload_expires(self):
+        with patch("lyricflow.job_store.UPLOAD_WAIT_SECONDS", 0.05):
+            job = self.store.create(job_input())
+            results = []
+            waiter = threading.Thread(target=lambda: results.append(self.store.wait(job["id"])))
+            waiter.start()
+            waiter.join(timeout=2)
+            self.assertFalse(waiter.is_alive())
+            self.assertEqual(results[0]["status"], "error")
 
     def test_saved_result_survives_restart_and_snapshot_edits(self):
         job = self.store.create(job_input())

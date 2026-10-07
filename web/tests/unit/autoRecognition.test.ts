@@ -158,3 +158,59 @@ it('releases the UI after a service connection times out', async () => {
     vi.useRealTimers();
   }
 });
+
+it('exposes a conflicting job for inspection without uploading, cancelling or applying it', async () => {
+  const id = 'a'.repeat(32);
+  const running = { id, name: 'previous.wav', status: 'processing', message: '正在處理前一首歌' };
+  const fetcher = vi
+    .fn()
+    .mockResolvedValueOnce(json({ ready: true }))
+    .mockResolvedValueOnce(
+      new Response(JSON.stringify({ error: '已有工作', job_id: id }), { status: 409 }),
+    )
+    .mockResolvedValueOnce(json(running))
+    .mockResolvedValueOnce(json({ ...running, status: 'done', message: '已完成' }));
+  vi.stubGlobal('fetch', fetcher);
+  const recognition = useAutoRecognition(ref(false));
+  const apply = vi.fn();
+  expect(await recognition.start(file, '歌詞', [clip], apply)).toBe(false);
+  expect(recognition.existingJob.value).toEqual(running);
+  expect(fetcher).toHaveBeenCalledTimes(3);
+  await recognition.refreshExistingJob();
+  expect(recognition.existingJob.value?.status).toBe('done');
+  expect(fetcher.mock.calls.map(([path]) => path)).toEqual([
+    '/api/health',
+    '/api/jobs',
+    `/api/jobs/${id}`,
+    `/api/jobs/${id}`,
+  ]);
+  expect(apply).not.toHaveBeenCalled();
+});
+
+it('keeps a conflicting job available when cancellation fails, and allows retry', async () => {
+  const id = 'b'.repeat(32);
+  const job = { id, name: 'previous.wav', status: 'uploading', message: '等待上傳' };
+  const fetcher = vi
+    .fn()
+    .mockResolvedValueOnce(json({ ready: true }))
+    .mockResolvedValueOnce(
+      new Response(JSON.stringify({ error: '已有工作', job_id: id }), { status: 409 }),
+    )
+    .mockResolvedValueOnce(json(job))
+    .mockRejectedValueOnce(new Error('offline'))
+    .mockResolvedValueOnce(json({ ...job, status: 'cancelled' }));
+  vi.stubGlobal('fetch', fetcher);
+  const recognition = useAutoRecognition(ref(false));
+  await recognition.start(file, '歌詞', [clip], vi.fn());
+  await recognition.cancelExistingJob();
+  expect(recognition.existingJob.value?.status).toBe('uploading');
+  expect(recognition.error.value).toContain('停止既有工作失敗');
+  expect(recognition.checkingExistingJob.value).toBe(false);
+  await recognition.cancelExistingJob();
+  expect(recognition.existingJob.value?.status).toBe('cancelled');
+  expect(recognition.error.value).toBe('');
+  expect(fetcher).toHaveBeenLastCalledWith(
+    `/api/jobs/${id}/cancel`,
+    expect.objectContaining({ method: 'POST' }),
+  );
+});

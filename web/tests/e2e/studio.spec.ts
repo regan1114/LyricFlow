@@ -358,7 +358,7 @@ test('mobile controls fit and every visual option renders', async ({ page }) => 
   expect(errors).toEqual([]);
 });
 
-test('glass panels, hover visibility, effect shortcuts and no default background', async ({
+test('glass panels, hover visibility, effect shortcuts and a default Logo without a background', async ({
   page,
 }) => {
   const imageRequests: string[] = [];
@@ -369,7 +369,9 @@ test('glass panels, hover visibility, effect shortcuts and no default background
   const controls = page.locator('.workspace-controls');
   await expect(controls).toHaveCSS('opacity', '0');
   await expect(controls).toHaveCSS('visibility', 'hidden');
-  expect(imageRequests).toEqual([]);
+  // The default Logo is an image layer, not a background scene.
+  expect(imageRequests.filter((url) => !url.startsWith('blob:'))).toEqual([]);
+  await expect(page.getByText('logo.png', { exact: true })).toHaveCount(1);
   await page.keyboard.press('Tab');
   await expect(controls).toHaveCSS('opacity', '1');
   await page.keyboard.press('Tab');

@@ -9,7 +9,7 @@ import uuid
 from dataclasses import asdict
 from pathlib import Path
 
-from .config import TERMINAL_STATUSES
+from .config import TERMINAL_STATUSES, UPLOAD_WAIT_SECONDS
 from .errors import JobBusyError, JobConflictError, JobNotFoundError, ServiceClosedError
 from .validation import JobInput
 
@@ -67,6 +67,8 @@ class JobStore:
             if self._closed:
                 raise ServiceClosedError("本機服務正在關閉，請重新啟動後再試。")
             for job in self._jobs.values():
+                if self._expire_upload(job):
+                    continue
                 if job["status"] not in TERMINAL_STATUSES:
                     raise JobBusyError(job["id"])
             job_id = uuid.uuid4().hex
@@ -87,7 +89,24 @@ class JobStore:
 
     def get(self, job_id):
         with self._changed:
+            self._expire_upload(self._load(job_id))
             return self._snapshot(self._load(job_id))
+
+    def _upload_wait_remaining(self, job):
+        if job["status"] == "uploading" and job["id"] not in self._uploads:
+            return max(0, job["created"] + UPLOAD_WAIT_SECONDS - time.time())
+        return None
+
+    def _expire_upload(self, job):
+        # Caller holds the condition lock. An active uploader owns its slot until released.
+        if self._upload_wait_remaining(job) == 0:
+            self.update(
+                job["id"],
+                status="error",
+                message="等待歌曲上傳逾時，工作已釋放，請重新送出歌曲。",
+            )
+            return True
+        return False
 
     def update(self, job_id, **values):
         with self._changed:
@@ -104,14 +123,17 @@ class JobStore:
 
     def claim_upload(self, job_id, size):
         with self._changed:
+            self._expire_upload(self._load(job_id))
             job = self._load(job_id)
             if job["status"] != "uploading" or size != job.get("size") or job_id in self._uploads:
                 raise JobConflictError("匯入已開始或結束，或檔案大小不符。")
             self._uploads.add(job_id)
+            self._changed.notify_all()
 
     def release_upload(self, job_id):
         with self._changed:
             self._uploads.discard(job_id)
+            self._changed.notify_all()
 
     def is_terminal(self, job_id):
         with self._changed:
@@ -119,8 +141,12 @@ class JobStore:
 
     def wait(self, job_id):
         with self._changed:
-            self._changed.wait_for(lambda: self._load(job_id)["status"] in TERMINAL_STATUSES)
-            return self._snapshot(self._load(job_id))
+            while True:
+                self._expire_upload(self._load(job_id))
+                job = self._load(job_id)
+                if job["status"] in TERMINAL_STATUSES:
+                    return self._snapshot(job)
+                self._changed.wait(timeout=self._upload_wait_remaining(job))
 
     def close(self):
         with self._changed:

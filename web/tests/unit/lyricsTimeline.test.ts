@@ -94,6 +94,65 @@ it('uses acoustic word times and falls back cleanly without words and in instrum
   expect(wordHighlightSpans(cues[0], 20)).toEqual([]);
   expect(wordHighlightSpans(cues[1], 26)).toEqual([]);
 });
+it('moves acoustic words and sentences together for fractional drags, clamping and undo', () => {
+  const input = project();
+  input.segments[0].start = input.segments[0].words![0].start = 14.7004;
+  const raw = ref(JSON.stringify(input));
+  const original = raw.value;
+  const editor = useSubtitleEditor(raw, () => false);
+  const cues = editor.items.value.map((cue) => ({ ...cue }));
+  editor.selectMany(cues.map((cue) => cue.uid));
+  editor.begin();
+  for (const offset of [0.1006, -0.1006, -100]) {
+    editor.moveMany(cues, offset);
+    const result = validateProject(JSON.parse(raw.value));
+    expect(result.segments[0].words![0].start).toBe(result.segments[0].start);
+    expect(result.segments[0].words!.at(-1)!.end).toBe(result.segments[0].end);
+    expect(result.segments[1].start - result.segments[0].start).toBeCloseTo(25 - 14.7004);
+  }
+  expect(editor.items.value[0].time).toBe(0);
+  editor.commit();
+  editor.undo();
+  expect(raw.value).toBe(original);
+  editor.redo();
+  expect(validateProject(JSON.parse(raw.value)).segments[0].start).toBe(0);
+});
+it('keeps the document, selection and history intact when an edit fails validation', () => {
+  const raw = ref(JSON.stringify(project()));
+  const original = raw.value;
+  const editor = useSubtitleEditor(raw, () => false);
+  const first = editor.items.value[0];
+  editor.selectedId.value = first.uid;
+  const invalid = { ...first, words: [{ text: first.text, start: first.time, end: 100 }] };
+  expect(() => editor.moveMany([invalid], 1)).toThrow();
+  expect(raw.value).toBe(original);
+  expect(editor.items.value[0]).toEqual(first);
+  expect(editor.selectedId.value).toBe(first.uid);
+  expect(editor.canUndo.value).toBe(false);
+  raw.value = JSON.stringify({ ...project(), segments: [] });
+  expect(editor.items.value).toEqual([]);
+});
+it('preserves words and confidence on untouched sentences and identical replacements', () => {
+  const input = project();
+  input.segments[0].confidence = 0.8;
+  input.segments[1].text = '其他歌詞';
+  input.segments[1].confidence = 0.9;
+  input.segments[1].words = [{ text: '其他歌詞', start: 25, end: 28 }];
+  const raw = ref(JSON.stringify(input));
+  const editor = useSubtitleEditor(raw, () => false);
+  editor.search.value = '月滿';
+  editor.replacement.value = '月滿';
+  expect(editor.replaceAll()).toBe(1);
+  expect(JSON.parse(raw.value).segments).toEqual(input.segments);
+  editor.replacement.value = '月圓';
+  expect(editor.replaceAll()).toBe(1);
+  const result = validateProject(JSON.parse(raw.value));
+  expect(result.segments[0].words).toBeUndefined();
+  expect(result.segments[0].confidence).toBeUndefined();
+  expect(result.segments[1]).toEqual(input.segments[1]);
+  editor.undo();
+  expect(JSON.parse(raw.value).segments).toEqual(input.segments);
+});
 it('applies known lyrics as structured JSON, preserving words rather than going through SRT', async () => {
   const json = (body: unknown) => new Response(JSON.stringify(body));
   vi.stubGlobal(

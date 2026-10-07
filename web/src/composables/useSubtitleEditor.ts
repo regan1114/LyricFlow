@@ -31,6 +31,7 @@ export function useSubtitleEditor(raw: Ref<string>, blocked: () => boolean) {
     ];
   }
   const items = ref<SubtitleCue[]>(readLines(raw.value));
+  const documentRevision = ref(0);
   let nextSegmentId = Math.max(0, ...items.value.map((cue) => cue.segmentId ?? 0)) + 1;
   const selectedIds = ref<string[]>([]);
   const selectedSet = computed(() => new Set(selectedIds.value));
@@ -87,8 +88,11 @@ export function useSubtitleEditor(raw: Ref<string>, blocked: () => boolean) {
   }
   function restore(value: Snapshot) {
     writing = true;
-    raw.value = value.raw;
-    writing = false;
+    try {
+      raw.value = value.raw;
+    } finally {
+      writing = false;
+    }
     items.value = value.items.map((cue) => ({ ...cue }));
     selectedIds.value = [...value.selectedIds];
   }
@@ -98,28 +102,36 @@ export function useSubtitleEditor(raw: Ref<string>, blocked: () => boolean) {
   }
   function write(next: SubtitleCue[], selection: string | string[] | null = selectedIds.value) {
     if (disabled.value) return;
-    if (!transaction) remember(snapshot());
-    items.value = next.slice().sort((first, second) => first.time - second.time);
+    let prepared = next.slice().sort((first, second) => first.time - second.time);
+    let nextId = nextSegmentId;
     if (isTimeline(raw.value)) {
       const used = new Set<number>();
-      items.value = items.value.map((cue) => {
-        const segmentId =
-          cue.segmentId && !used.has(cue.segmentId) ? cue.segmentId : nextSegmentId++;
+      prepared = prepared.map((cue) => {
+        const segmentId = cue.segmentId && !used.has(cue.segmentId) ? cue.segmentId : nextId++;
         used.add(segmentId);
         return { ...cue, segmentId };
       });
     }
+    // Validate before changing the document, selection or undo history.
+    const serialized = isTimeline(raw.value)
+      ? serializeTimeline(prepared, raw.value)
+      : serializeSrt(prepared);
+    if (!transaction) remember(snapshot());
+    nextSegmentId = nextId;
+    items.value = prepared;
     selectMany(typeof selection === 'string' ? [selection] : (selection ?? []));
     writing = true;
-    raw.value = isTimeline(raw.value)
-      ? serializeTimeline(items.value, raw.value)
-      : serializeSrt(items.value);
-    writing = false;
+    try {
+      raw.value = serialized;
+    } finally {
+      writing = false;
+    }
   }
   watch(
     raw,
     (value, previous) => {
       if (writing) return;
+      documentRevision.value++;
       if (!transaction) remember({ ...snapshot(), raw: previous });
       items.value = readLines(value);
       nextSegmentId = Math.max(
@@ -146,7 +158,12 @@ export function useSubtitleEditor(raw: Ref<string>, blocked: () => boolean) {
     ) {
       next.words = undefined;
       next.confidence = undefined;
-    } else next.words = shiftWords(cue.words, delta);
+    } else
+      next.words = shiftWords(cue.words, delta)?.map((word) => ({
+        ...word,
+        start: Math.max(next.time, word.start),
+        end: Math.min(next.endTime, word.end),
+      }));
     if (
       !Number.isFinite(next.time) ||
       !Number.isFinite(next.endTime) ||
@@ -197,15 +214,19 @@ export function useSubtitleEditor(raw: Ref<string>, blocked: () => boolean) {
   }
   function moveMany(originals: SubtitleCue[], delta: number) {
     if (!originals.length || disabled.value || !Number.isFinite(delta)) return;
-    const offset = Math.max(delta, -Math.min(...originals.map((cue) => cue.time)));
+    // Quantize the shared shift, not the sentence boundaries independently of words.
+    const offset = Math.max(
+      Math.round(delta * 1000) / 1000,
+      -Math.min(...originals.map((cue) => cue.time)),
+    );
     const moved = new Map(
       originals.map((cue) => [
         cue.uid,
         {
           ...cue,
           words: shiftWords(cue.words, offset),
-          time: Math.round((cue.time + offset) * 1000) / 1000,
-          endTime: Math.round((cue.endTime + offset) * 1000) / 1000,
+          time: cue.time + offset,
+          endTime: cue.endTime + offset,
         },
       ]),
     );
@@ -310,14 +331,14 @@ export function useSubtitleEditor(raw: Ref<string>, blocked: () => boolean) {
         count++;
         return replacement.value;
       });
-    const next = items.value.map((cue) => ({
-      ...cue,
-      text: replace(cue.text),
-      subText: replace(cue.subText),
-      thirdText: replace(cue.thirdText),
-      words: undefined,
-      confidence: undefined,
-    }));
+    const next = items.value.map((cue) => {
+      const text = replace(cue.text);
+      const subText = replace(cue.subText);
+      const thirdText = replace(cue.thirdText);
+      return text === cue.text && subText === cue.subText && thirdText === cue.thirdText
+        ? cue
+        : { ...cue, text, subText, thirdText, words: undefined, confidence: undefined };
+    });
     if (count) write(next);
     return count;
   }
@@ -347,6 +368,7 @@ export function useSubtitleEditor(raw: Ref<string>, blocked: () => boolean) {
     replacement.value = '';
   }
   return {
+    documentRevision,
     resetHistory,
     items,
     selectedId,

@@ -1,65 +1,160 @@
-# LyricFlow | Lyrics, Subtitles and Music Visualization
+# LyricFlow | Lyric Timing and Music Video Creation
 
 [繁體中文](README.md) | **English**
 
-LyricFlow brings songs, lyrics, images and video into an editable music visualization project. It includes a subtitle timeline, manual lyric timing, scene effects and video export. Use the browser edition online, or install the Python service to enable recognition on your own computer.
+Turn songs, lyrics, images and video into music videos. LyricFlow combines a subtitle timeline, manual timing, music visualization, scene effects and video export. Install the local service to add automatic recognition and alignment against supplied lyrics.
 
-**[Open the online visual editor](https://lyric-flow-seven.vercel.app/)**
+**[Open the online editor](https://lyric-flow-seven.vercel.app/)** · [Quick start](#quick-start) · [Local installation](#local-installation) · [Song-folder workflow](#create-assets-from-a-song-folder) · [FAQ](#faq) · [Documentation](#documentation)
 
-> **The Vercel edition does not include automatic recognition.**
-> It deploys only the Vue frontend, with no Python backend, recognition engine or model. You can import songs and subtitles, edit lyrics, mark their timing manually and export videos. Automatic recognition and automatic lyric alignment require the local edition described below.
+> The online edition supports media editing, manual timing and video export. **Automatic recognition and lyric alignment require the local Python service and the corresponding models.**
 
-## Special thanks: 考拉醬 | 謎謎之音
+The visual editor builds on the tool provided by **[考拉醬 | 謎謎之音](https://www.youtube.com/@meme-koala)**. Special thanks for sharing it.
 
-**Special thanks to [考拉醬 | 謎謎之音](https://www.youtube.com/@meme-koala) for providing the Web visualization tool.**
+## Choose an edition
 
-LyricFlow's visual editor builds on the tool he provided, integrating subtitle editing, media timelines, project saving and the local recognition workflow. Thank you for sharing the tool and helping bring music visualization and lyric subtitles together for creators.
+| Edition                                                 | Use it for                                                       | Installation                                    |
+| ------------------------------------------------------- | ---------------------------------------------------------------- | ----------------------------------------------- |
+| [Online](https://lyric-flow-seven.vercel.app/)          | Subtitle editing, manual timing and video creation               | None                                            |
+| [Local frontend only](#local-frontend-only)             | Running the same visual editor on your computer                  | Node.js                                         |
+| [Local service](#local-recognition-and-lyric-alignment) | Recognition, alignment against correct lyrics or API integration | Node.js, Python and the required engines/models |
 
-Please visit **[考拉醬 | 謎謎之音 on YouTube](https://www.youtube.com/@meme-koala)** to enjoy and support his work!
-
-## Online and local editions
-
-| Feature                                   | Vercel online edition                                        | Local edition (Vue + Python)                    |
-| ----------------------------------------- | ------------------------------------------------------------ | ----------------------------------------------- |
-| Access                                    | [Open in your browser](https://lyric-flow-seven.vercel.app/) | Install and open `http://127.0.0.1:8080`        |
-| Media import, subtitles and manual timing | Available                                                    | Available                                       |
-| Visualization, scenes and video export    | Available, subject to browser support                        | Available, subject to browser support           |
-| Project downloads and browser drafts      | Available                                                    | Available                                       |
-| Automatic recognition / lyric alignment   | **Not available**                                            | Available after installing the engine and model |
-| Python and model installation             | Not required                                                 | Required                                        |
-
-The online edition edits, previews and exports your media in the browser, without sending songs to a Python recognition service. The manual timing feature records timestamps that you mark while listening. Automatic image sequencing, visual effects and spectrum analysis are separate from recognition.
+All editions support media import, timeline editing, scenes, project saving and video export. The online edition edits, previews and exports media in the browser without sending songs to a Python recognition service.
 
 ## Features
 
-- **Media timeline:** import audio, images and video; arrange, move, trim, split and duplicate clips; adjust audio levels.
-- **Subtitle editing:** import SRT, LRC or TXT; type or paste lyrics, search and replace text, and adjust cue boundaries.
-- **Image and lyric alignment:** import images, then load a JSON file containing filenames, timestamps and lyrics to create subtitles and continuous visuals covering the intro, instrumental gaps and outro.
-- **Marquee selection:** drag across empty subtitle-track space to select multiple cues, then move, duplicate or delete them together, with undo and redo.
-- **Manual lyric timing:** mark each line while listening, undo a mark, insert an empty timestamp and export subtitles.
-- **Music visualization:** spectrum and waveform displays, orb and vinyl modes, transitions, atmosphere effects and built-in scenes.
-- **Visual layout:** 16:9, 1:1 and 9:16 canvases, song information, fonts, logos, overlays and chroma key.
-- **Saving:** download a `.resonance` project containing your media and settings, or use an automatic draft in the current browser.
-- **Export:** download SRT/LRC subtitles or record the canvas and audio to MP4/WebM, depending on browser support.
+- **Subtitles and timing:** import SRT/LRC/TXT/Timeline JSON, edit lines, search and replace, mark timing manually, select and move multiple cues, and undo/redo.
+- **Media timeline:** arrange images, video and multiple audio tracks; move, trim, split and duplicate clips; adjust volume and link subtitle movement.
+- **Image subtitles:** use image filenames, timestamps and lyrics to build a storyboard covering intros, instrumental gaps and outros.
+- **Music visualization:** spectrum, waveform, orb and vinyl displays, transitions and immersive scenes; 16:9, 1:1 and 9:16 layouts, Chinese fonts, logos, overlays and chroma key.
+- **Saving and export:** browser drafts, `.resonance` projects containing media, SRT/LRC/Timeline JSON, and MP4/WebM video depending on browser support.
+- **Local lyric processing:** ASR-based lyric matching and alignment that preserves supplied lyrics with available word timestamps, accessible through the UI, API or CLI.
 
-See the [Web frontend guide](web/README.md) for detailed controls (Traditional Chinese).
+## Quick start
 
-## Start using the online editor
+1. **Add a song:** open the [online editor](https://lyric-flow-seven.vercel.app/) and select **匯入音訊**. The first imported song is added to an audio track automatically.
+2. **Add lyrics:** use **匯入字幕**, or open **歌詞編輯 → 逐句字幕** to type or paste lyrics.
+3. **Set timing:** use **開始對時** to mark untimed lyrics while listening, or adjust existing cues in the timeline. The local edition also supports the automatic modes described below.
+4. **Arrange visuals:** import images/video and select scenes and effects. Use **手動時間軸** or image-subtitle JSON when visuals must follow fixed song timestamps.
+5. **Export:** choose dimensions, frame rate, quality and range under **匯出設定**, then select **開始錄影**. Use the subtitle editor's download buttons for subtitles alone.
+6. **Save:** check that the draft is saved. Select **儲存專案** to download a `.resonance` backup or transfer the project to another device.
 
-1. Open the [online tool](https://lyric-flow-seven.vercel.app/) and import a song with **匯入音訊**.
-2. Import SRT/LRC/TXT through **匯入字幕**, or open **歌詞編輯 → 逐句字幕** to add and paste lyrics.
-3. Use **開始對時** to mark untimed lyrics while listening, or adjust existing timestamps in the timeline.
-4. Import visual media and choose your scenes and effects. Use manual timeline mode for video clips and explicitly scheduled visuals.
-5. Choose dimensions, frame rate, quality and range under **匯出設定**, then use the player's record button. Use the SRT/LRC buttons for subtitle-only exports.
-6. Check the draft status before leaving, or use **儲存專案** to download a `.resonance` backup for another device or future editing.
+Manual timing shortcuts: **Space/→** marks a line, **←** undoes a mark, **0** inserts an empty timestamp and **Enter** finishes. Cancelling preserves the original subtitles.
 
-During manual timing, Space or Right Arrow marks the current line, Left Arrow undoes a mark, `0` inserts an empty timestamp, and Enter finishes. On-screen buttons provide the same actions. Cancelling preserves the original subtitles.
+Video export records **in real time**, so its duration depends on the selected range. Browsers supporting direct file saving write to disk while recording; other browsers use an approximately **256 MiB** memory buffer and stop to save the recorded portion when it fills. Wait for saving to finish after stopping. Formats and performance depend on the browser.
 
-Video export records in real time. Browsers that support saving directly to a file, such as desktop Chrome and Edge, ask for a save location before recording and write chunks to disk as they arrive, allowing videos larger than 256 MiB. Wait for saving to finish after stopping. Other browsers still use a 256 MiB memory buffer and stop to download the captured portion when it fills. Available formats and performance depend on the browser.
+## Local installation
+
+Run the following commands from the repository root containing `app.py` and `package.json`.
+
+### Local frontend only
+
+Requires **Node.js 22.12 or later**. Python is not required.
+
+```sh
+npm ci
+npm run build:static
+npm run preview:static
+```
+
+Open the URL printed in the terminal. This uses the same recognition-disabled mode as the online edition and builds to `web/dist-static/`.
+
+### Local recognition and lyric alignment
+
+Requires **Node.js 22.12 or later**. The commands below use **Python 3.12** for both the main service and alignment setup. The main service supports Python 3.12 or later, but alignment currently pins NumPy 1.26.4, which [supports Python 3.9–3.12](https://numpy.org/devdocs/release/1.26.4-notes.html). Do not create a new alignment environment with Python 3.13/3.14 under these pinned dependencies.
+
+Initial setup downloads dependencies and models. The engines can run on the local CPU without an NVIDIA GPU.
+
+**1. Build the frontend and create the Python environment**
+
+macOS/Linux:
+
+```sh
+npm ci
+npm run build
+python3.12 -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements.txt
+```
+
+<details>
+<summary>Windows: create the environment</summary>
+
+Install Python x64 with the Python Launcher, then run in PowerShell:
+
+```powershell
+npm ci
+npm run build
+py -3.12 -m venv .venv
+.venv\Scripts\python.exe -m pip install -r requirements.txt
+```
+
+Replace `python` in the following commands with `.venv\Scripts\python.exe`.
+
+Native Windows support still needs device verification. Alternatively, follow the Linux instructions in WSL2. Create separate `.venv/`, `.venv-alignment/` and `.local/` directories for each operating system.
+
+</details>
+
+**2. Install either or both engines**
+
+| Mode                             | UI entry         | Behavior                                                               | Maximum audio duration |
+| -------------------------------- | ---------------- | ---------------------------------------------------------------------- | ---------------------- |
+| Alignment against correct lyrics | **精準歌詞對齊** | Locates supplied lyrics, preserving text and available word timestamps | 10 minutes             |
+| ASR-based lyric matching         | **自動辨識**     | Recognizes audio, then matches it to supplied lyrics                   | 30 minutes             |
+
+Alignment against correct lyrics:
+
+```sh
+python scripts/setup_alignment.py --separation
+```
+
+This creates a separate `.venv-alignment/` and installs alignment and vocal separation models, requiring several GB of storage. Omit `--separation` to install alignment on the original audio alone. This engine does not depend on whisper.cpp below. See the [lyrics timeline guide](LYRICS_ENGINE.md) for operation and MyCut integration.
+
+ASR-based lyric matching:
+
+```sh
+python -m pip install -r requirements-build.txt
+python scripts/setup.py
+```
+
+This builds whisper.cpp and places its engine and model in `.local/`. macOS requires Command Line Tools (`xcode-select --install`); Linux requires C/C++ build tools and the matching `venv` package. Windows requires Visual Studio 2022 Build Tools with **Desktop development with C++**; `setup-windows.cmd` can also perform ASR setup.
+
+**3. Start the service**
+
+```sh
+python app.py --open
+```
+
+Open `http://127.0.0.1:8080`. Keep the terminal running and press **Ctrl+C** to stop the service. On later visits, launch without reinstalling:
+
+```sh
+# macOS / Linux
+.venv/bin/python app.py --open
+```
+
+On Windows, use `.venv\Scripts\python.exe app.py --open`. With the ASR engine installed, you can also launch through `start-mac.command` or `start-windows.cmd`.
+
+<details>
+<summary>Upgrade an existing Python environment</summary>
+
+Stop the service, rename the old `.venv` as a backup, then recreate it and reinstall dependencies. Use Python 3.12 when installing the alignment engine. Virtual environments do not upgrade with system Python. Existing engines and models in `.local/` can be reused. The main service alone can use newer Python versions; Python 3.13 or later automatically installs `audioop-lts`.
+
+</details>
+
+### Use the local alignment modes
+
+1. Import a song and check that it is on an audio track.
+2. Open the entry for your installed engine and paste the complete lyrics, one line at a time. Write out repeated choruses in full.
+3. For alignment against correct lyrics, remove unsung markers such as `[Verse]`. Select vocal separation (**分離人聲**) when handling long intros, instrumental breaks or strong accompaniment.
+4. Submit and monitor progress. Replacing existing subtitles requires confirmation; they remain intact until success and are preserved on failure or cancellation.
+5. Listen to each line and adjust its timing. Download **Timeline JSON** to retain word timestamps; SRT/LRC cannot store them.
+
+Both modes accept WAV, MP3, M4A, AAC, FLAC and AIFF, with limits of **200 MiB** of audio and **12,000 lyric characters**. UTF-8 lyric files uploaded through the API are limited to **64 KiB**. Sustained notes, harmonies, instrumental breaks and repeated sections can affect alignment. ASR output omits unmatched lines from SRT; retry or resolve their timing manually before creating complete assets.
+
+If a submission finds an existing job after a reload, the dialog lets you inspect, stop or download it when complete. Jobs that **have not started uploading audio within 5 minutes** release their slot on the next lookup or submission. Active uploads and recognition are unaffected. See [API.md](API.md) for job management, missing-line retries and the Python client.
 
 ## Create assets from a song folder
 
-Create one folder per song with one audio file and one UTF-8 TXT file containing the complete lyrics. You can use the following location (create it if missing) or provide another local folder:
+Create one folder per song containing one audio file and one UTF-8 TXT file with the complete lyrics. Audio and lyric filenames are unrestricted:
 
 ```text
 input/我的歌曲/
@@ -68,201 +163,98 @@ input/我的歌曲/
   專輯名稱.txt       # Optional; use this exact filename and a single-line album title
 ```
 
-Audio and lyric filenames are otherwise unrestricted. Suno markers such as `[Verse]` and `[Chorus]` may remain, but write out repeated choruses in full. Ask Codex or another AI:
+For an AI with local file access, alignment access and image generation/inspection tools, use:
 
-> Read this project's AGENTS.md and WORKFLOW.md, then process input/我的歌曲. Produce a complete SRT, individual storyboard images, a JSON file aligning lyrics with image filenames, and an album cover bearing its title. If output already exists, verify the sources and progress before resuming.
+> Read this project's AGENTS.md and WORKFLOW.md, then process input/我的歌曲. Produce a complete SRT, individual storyboard images, image-subtitle JSON and an album cover bearing its title. If output already exists, verify sources and progress before resuming.
 
-The AI starts this workflow when instructed; adding files does not trigger it automatically. It needs access to the folder, the local alignment service or CLI, and image generation and inspection tools. See the local installation instructions below. The Python helpers validate inputs and export subtitles/JSON; the AI's image tools generate the artwork.
+This workflow uses results from the ASR engine; install that engine and start the local service first. Adding files does not start production automatically. Suno section markers may remain in the source lyrics, but write repeated choruses in full.
 
-Defaults are **16:9 storyboard images with consistent characters and style, no text, and room for subtitles**, plus a **square 1:1 cover bearing the album title**. Specify a style, image count, aspect ratio or title in your request if desired. Otherwise, the AI chooses a title from the lyrics. Results go into the song folder's `output/`:
+Defaults are **16:9 storyboard images with consistent characters and style, no text and room for subtitles**, plus a **1:1 cover bearing the album title**. Specify a style, image count, aspect ratio or title in your request.
 
-| Output                                                    | Purpose                                                                                         |
-| --------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
-| `lyrics.srt`                                              | Complete lyrics and cue times, also usable in other editors                                     |
-| `images/`                                                 | Individual storyboard image files                                                               |
-| `image-subtitles.json`                                    | Matches image filenames through `name` and imports subtitles and visuals together               |
-| `cover/album-cover.png`, `album.md`                       | Album cover, title and naming rationale; the cover is not automatically inserted into the video |
-| `storyboard.md`, `storyboard.json`, `prompts.md`          | Storyboard, image change points and generation prompts                                          |
-| `source.json`, `PROGRESS.md`, alignment and lyric records | Sources, user requirements, progress and handoff records                                        |
+The song's `output/` contains `lyrics.srt`, `images/`, `image-subtitles.json`, the cover, storyboard and source/progress records. To resume, read `output/PROGRESS.md`, then verify sources and actual deliverables. [WORKFLOW.md](WORKFLOW.md) defines the complete output and acceptance requirements. Private inputs and outputs are excluded from Git; back them up separately.
 
-[AGENTS.md](AGENTS.md) is the AI entry point; [WORKFLOW.md](WORKFLOW.md) defines the complete process, deliverables and acceptance checks (Traditional Chinese). Each song's `output/PROGRESS.md` records its actual progress. A replacement AI should read these files and verify `source.json` and existing outputs before resuming. `input/` and `output/` are excluded from Git; back them up or share them separately when handing off work.
+### Import the storyboard
 
-## Import image and lyric JSON
+1. Import the original song and check the audio-track duration.
+2. Import the files in `images/`, preserving filenames and avoiding duplicate names.
+3. Select **匯入圖片字幕 JSON** and open `image-subtitles.json`. This switches to manual timeline mode and **replaces V1 visuals and all subtitles**, preserving audio, assets and styles. A separate SRT import is unnecessary.
+4. Preview the timing and record the video. The cover is not inserted automatically.
 
-Both editions can import prepared image JSON:
+Image-subtitle JSON uses `version: 1` and is **different from Timeline JSON**, which stores word timestamps. Filenames must match imported images exactly, and lyrics cannot be blank. The first image starts at zero and the last extends to the existing audio or subtitle endpoint. Download the [example JSON](web/public/examples/image-subtitles.json); see the [format guide](web/public/examples/image-subtitles.md) for fields, limits and compatibility.
 
-1. Import the original song and check that it is on an audio track with the correct duration.
-2. Add the files in `images/` through **歌詞編輯 → 素材**, preserving filenames and avoiding duplicate asset names.
-3. Use **匯入圖片字幕 JSON** to open `image-subtitles.json`. This switches to manual timeline mode and replaces V1 visuals and all subtitles, preserving audio, assets and styles. A separate SRT import is unnecessary.
-4. Preview the subtitles and image changes, then record using the normal export controls.
+## Saving and data locations
 
-Use `version: 1` and include `name`, `startTime`, `endTime` and `content` in each scene. `name` must match a unique imported image filename exactly, including its extension and letter case. No `image` field or Base64 data is required. Times are absolute seconds within the song; each cue must last at least 0.05 seconds, cues cannot overlap, and `content` must contain nonblank lyrics. Limits are **64 MiB and 1–500 scenes**. Multiple cues may share an image.
+| Data                    | Location and purpose                                                                                                                           |
+| ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| Browser draft           | IndexedDB in the current browser; keeps one latest version, prompts to restore after reload and preserves the previous version on save failure |
+| `.resonance` project    | Download with **儲存專案**; contains media, subtitles, timelines and settings for backup or transfer                                           |
+| Local recognition jobs  | `.cache/interface/`, including uploaded audio, lyrics, results and logs                                                                        |
+| Local caches and models | `.cache/` and `.local/`, with conversion, recognition/alignment caches and models depending on the engine                                      |
 
-The first image starts at zero, each image continues until the next scene starts, and the final image extends to the end of the existing audio tracks or final subtitle, whichever is later. Instrumental gaps need no blank subtitle scenes. If an error reports blank `content`, check that scene and restore its missing lyrics. After extending the audio track, reimport the JSON or extend the final image clip manually.
+Drafts are separate for each browser and website origin, including its port. Online and local editions do not share them automatically. Conflicting edits across tabs require a choice before replacement.
 
-Validation failures preserve the current project. Download the [example JSON](web/public/examples/image-subtitles.json); see the [format guide](web/public/examples/image-subtitles.md) for field details and legacy compatibility.
+**重置** clears the current work and that site's draft; clearing browser site data also deletes drafts. Neither deletes source files on disk, downloaded projects or Python job files. Back up results and stop the service before clearing backend caches.
 
-## Common visual settings
+## FAQ
 
-- **Images zooming with the music:** set **作品設定 → 畫面與背景 → 背景律動** to `0`. If the whole-screen impact effect is enabled, also disable **氛圍特效 → 節奏鏡頭衝擊**.
-- **Logo:** new projects load the bundled `web/public/logo.png` at the bottom-right corner with `20%` size. Adjust, replace or clear it under **Logo 與疊圖**. Opening a project or restoring a draft retains its saved content.
-- **Synchronizing images to lyrics:** automatic image sequencing uses an independent clock; playback, pause and seeking do not reset it. Its lyric mode uses cue intervals as a repeating rhythm. For fixed lyric-to-image matches, use JSON import or the manual timeline. Switching back to automatic sequencing clears V1 clips.
+| Question                                                 | Answer                                                                                                                                                                  |
+| -------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Why is automatic recognition missing online?             | The online edition provides manual timing. Automatic modes require the local service and the corresponding engine.                                                      |
+| Why does the local homepage ask for a build?             | Run `npm ci` and `npm run build` at the repository root. Flask serves `web/dist/`.                                                                                      |
+| Why do images keep cycling when playback stops or seeks? | Automatic sequencing uses an independent clock. Use image-subtitle JSON or the manual timeline for fixed song timestamps. Switching back to automatic mode clears V1.   |
+| How do I stop images zooming with the music?             | Set **作品設定 → 畫面與背景 → 背景律動** to `0`; also disable **氛圍特效 → 節奏鏡頭衝擊** if needed.                                                                    |
+| How do I change or remove the default logo?              | Use **Logo 與疊圖**. Loading the logo alone does not create an empty draft; the first draft save includes it.                                                           |
+| Where is my project in another browser/device?           | Drafts do not sync across devices. Download a `.resonance` file in the original environment and use **開啟專案** in the new one.                                        |
+| Why did word highlighting disappear after SRT import?    | SRT stores sentence timing only. Use Timeline JSON to retain word timestamps. Text edits or trimming invalidate affected word data and fall back to sentence subtitles. |
 
-## Drafts, projects and reset
+## Development and deployment
 
-The **專案與草稿** panel can pause automatic saving, save immediately, restore or delete a draft, and show its timestamp, media count and status. After a reload, choose whether to restore the saved draft or replace it with your current work.
-
-Drafts use the current browser's IndexedDB and keep one latest version. Subtitle and settings changes reuse stored media. Failed saves preserve the previous successful draft and show an error; competing edits in different tabs require a choice before replacement.
-
-- Drafts are separate for each browser and website origin, including its port. Local, Vercel preview and production URLs do not share them automatically.
-- Clearing website data or confirming **重置** deletes that site's draft. Reset also clears current media, subtitles and editing state.
-- A `.resonance` download includes imported assets, subtitles, timelines and settings. Use **開啟專案** to restore it or move your work to another device.
-- Reset does not delete source files on your computer, downloaded projects, saved styles or Python recognition job files.
-
-## Run the frontend-only edition locally
-
-Install Node.js 22.12 or later. From the repository root:
-
-```sh
-npm ci
-npm run build:static
-npm run preview:static
-```
-
-Open the URL printed in the terminal. This uses the same **recognition-disabled** build mode as Vercel and writes to `web/dist-static/`. Python is not required.
-
-## Deploy your own Vercel site
-
-Push the source to GitHub, select **Add New → Project** in Vercel, import the repository and use these settings:
-
-| Setting               | Value                  |
-| --------------------- | ---------------------- |
-| Root Directory        | `web`                  |
-| Framework Preset      | `Vite`                 |
-| Install Command       | `npm ci`               |
-| Build Command         | `npm run build:static` |
-| Output Directory      | `dist-static`          |
-| Environment Variables | None required          |
-
-[web/vercel.json](web/vercel.json) supplies the build settings. Only the static frontend is published; Python is not deployed. After the first deployment, check **Settings → Environments → Production → Branch Tracking**. This project currently uses `master`. Subsequent pushes to the production branch update the site, while other branches can create preview deployments. See [Vercel's Git deployment documentation](https://vercel.com/docs/git#customizing-the-production-branch).
-
-The integrated frontend lives in `web/`. The local `video_visual/` folder is the original imported-tool backup, excluded from Git and not used for deployment.
-
-## Local edition with automatic recognition
-
-Recognition requires the Python service, engine and model on your computer. A regular `npm run build` writes to `web/dist/`, separately from the frontend-only `web/dist-static/` build.
-
-### Requirements
-
-- Node.js 22.12 or later for frontend installation and building.
-- Python 3.12 or later; the main app has been verified with 3.12, 3.13 and 3.14.
-- C/C++ build tools on macOS/Linux. Native Windows x64 uses Visual Studio 2022 Build Tools with the Desktop development with C++ workload.
-- Internet access for the initial dependency, whisper.cpp and model downloads. Recognition runs on the local CPU; no GPU is required.
-
-### macOS / Linux
-
-Run from the repository root containing `app.py`. Check that `python3` meets the version requirement. On macOS, use `xcode-select --install` if build tools are missing; on Linux, install build tools and the `venv` package matching your Python version.
-
-```sh
-npm ci
-npm run build
-python3 -m venv .venv
-source .venv/bin/activate
-python -m pip install -r requirements.txt -r requirements-build.txt
-python scripts/setup.py
-python app.py --open
-```
-
-Setup verifies downloads, builds whisper.cpp and stores the engine and model in `.local/`. After installation, launch with:
-
-```sh
-.venv/bin/python app.py --open
-```
-
-On macOS, you can also double-click `start-mac.command` in the repository root.
-
-Open `http://127.0.0.1:8080`. Keep the terminal running while using the app; press Ctrl+C to stop it.
-
-To upgrade an existing environment, stop the service and rename the old `.venv` as a backup, then repeat the `venv` and dependency installation commands with your chosen Python 3.12+ executable. Virtual environments do not upgrade when the system Python changes. The engine and models in `.local/` can be reused. Python 3.13+ automatically installs `audioop-lts` to preserve the existing PCM conversion behavior.
-
-### Windows
-
-Install Node.js, Python 3.12 or later (x64) including the Python Launcher, and Visual Studio 2022 Build Tools. Run `npm ci` and `npm run build` in the repository root, then:
-
-1. Run `setup-windows.cmd` to install Python dependencies, the recognition engine and model.
-2. Run `start-windows.cmd` to open the local application.
-
-Setup uses `py -3` for a new environment and validates an existing `.venv`. To select a version, first run, for example, `py -3.12 -m venv .venv`, then run setup. Rename any existing environment older than 3.12 as a backup first.
-
-Native Windows support still needs device verification. Alternatively, use WSL2 and follow the Linux instructions inside Ubuntu. Do not share `.venv/` or `.local/` across operating systems.
-
-### Recognition workflow
-
-1. Import a song and add it to an audio track if needed.
-2. Click the top-right recognition icon; its hover label is **自動辨識**.
-3. Choose the song, enter one sung lyric line per line, and submit.
-4. Existing subtitles require replacement confirmation. Cancelling that confirmation preserves the input without submitting a job.
-5. Successful results replace the subtitles. Failed or cancelled recognition preserves the originals. Review and adjust the results in the timeline.
-
-Local recognition accepts WAV, MP3, M4A, AAC, FLAC and AIFF audio, up to **200 MiB and 30 minutes**. Lyrics are limited to **12,000 characters**; uploaded UTF-8 lyric text files are limited to **64 KiB**. These service limits are separate from image JSON and recording limits.
-
-Recognition and lyric matching primarily target Chinese. Sustained notes, instrumental breaks, repeated sections and strong accompaniment can affect alignment, so review the timing by listening. Unmatched lines are omitted from recognition SRT output. Check the unmatched and review counts, then retry or resolve the timing manually before assembling complete assets. Missing-line retries and integrations are documented in the [API guide](API.md).
-
-The CLI accepts PCM WAV audio and a lyrics text file:
-
-```sh
-python lyric_flow.py /path/to/song.wav /path/to/lyrics.txt --threads 2 --output output
-```
-
-It produces `.draft.srt`, `.review.txt` and `.alignment.json` files. This `.draft.srt` is a recognition output file, separate from browser drafts.
-
-### Local Python data
-
-Uploaded audio, lyrics, job results and logs default to `.cache/interface/`; conversion and recognition caches use `.cache/lyric-flow/`. Cancelling recognition or resetting the web workspace does not remove these backend files. Back up results and stop the service before deleting the relevant cache directories.
-
-## Development and verification
-
-From the repository root:
+Development mode:
 
 ```sh
 npm ci
 npm run dev
 ```
 
-Development mode retains recognition and proxies `/api` to `http://127.0.0.1:8080`; start Python separately when using it. Rebuild with `npm run build` for the local edition or `npm run build:static` for the frontend-only edition.
+`/api` is proxied to `http://127.0.0.1:8080`. Start the Python service in another terminal when using recognition.
+
+| Command                                                     | Purpose                                                      |
+| ----------------------------------------------------------- | ------------------------------------------------------------ |
+| `npm run build`                                             | Build `web/dist/` for local Flask                            |
+| `npm run build:static`                                      | Build the recognition-disabled edition to `web/dist-static/` |
+| `npm run format:check`, `npm run typecheck`, `npm run lint` | Frontend formatting, type and lint checks                    |
+| `npm test`                                                  | Frontend unit tests                                          |
+| `npm run test:e2e`                                          | Browser tests using Vite and local Google Chrome             |
+| `npm run test:static`                                       | Build and test the frontend-only edition without Python      |
+
+Full local checks, using `.venv` with dependencies installed:
 
 ```sh
-npm run format:check
-npm run typecheck
-npm run lint
-npm test
-npm run test:static
+.venv/bin/python -m pip install -r requirements-dev.txt
+.venv/bin/python scripts/check.py --browser
 ```
 
-`test:static` builds the recognition-disabled edition and uses local Google Chrome with a static preview server, without starting Python. With Python dependencies installed, run the complete local-edition checks:
+On Windows, substitute `.venv\Scripts\python.exe`. The script builds the frontend, starts a temporary service and cleans up afterward. Local Google Chrome is required. Real-song tests need separate fixtures, and optional engines have their own tests; see [architecture and verification](ARCHITECTURE.md#開發與驗證).
 
-```sh
-python -m pip install -r requirements-dev.txt
-python scripts/check.py --browser
-```
+For Vercel, set Root Directory to **`web`**, use `npm run build:static`, and publish `dist-static`. [web/vercel.json](web/vercel.json) supplies the build settings. Python and API keys are not required. See the [frontend deployment guide](web/README.md#vercel只部署-vue-前端) for details.
 
-Real recognition tests requiring external song fixtures and a model are skipped by default. See the [architecture and verification guide](ARCHITECTURE.md#開發與驗證) for setup. Keep `tests/` and `web/tests/` in version control; generated test results, private media, models and caches are excluded by `.gitignore`.
+## Documentation
 
-## Project layout and credits
+The detailed guides below are primarily in Traditional Chinese.
 
-| Path                        | Purpose                                                                 |
-| --------------------------- | ----------------------------------------------------------------------- |
-| `web/src/`                  | Vue 3 and TypeScript visual editor                                      |
-| `web/public/`               | Fonts, scenes and asset attribution                                     |
-| `web/vercel.json`           | Frontend-only Vercel deployment configuration                           |
-| `lyricflow/`                | Python API, recognition and lyric alignment                             |
-| `app.py` / `lyric_flow.py`  | Local web server / recognition CLI                                      |
-| `lyric_flow_client.py`      | Python client for the local recognition API                             |
-| `tests/` / `web/tests/`     | Backend / frontend and browser tests                                    |
-| `scripts/`                  | Setup, verification, song-folder preparation and storyboard export      |
-| `AGENTS.md` / `WORKFLOW.md` | AI entry point / song production and delivery specification             |
-| `input/` / `output/`        | Private songs and generated assets; create as needed, excluded from Git |
+| Document/directory                                              | Contents                                                             |
+| --------------------------------------------------------------- | -------------------------------------------------------------------- |
+| [web/README.md](web/README.md)                                  | Editor controls, scenes, export, frontend development and deployment |
+| [LYRICS_ENGINE.md](LYRICS_ENGINE.md)                            | Alignment against correct lyrics, word timing and MyCut integration  |
+| [API.md](API.md)                                                | Local API, job management, retries and Python client                 |
+| [WORKFLOW.md](WORKFLOW.md) / [AGENTS.md](AGENTS.md)             | AI song production, acceptance checks and handoff rules              |
+| [ARCHITECTURE.md](ARCHITECTURE.md)                              | Module responsibilities, job lifecycle and verification              |
+| [Image-subtitle format](web/public/examples/image-subtitles.md) | Storyboard JSON fields, limits and examples                          |
+| `web/src/` / `lyricflow/`                                       | Vue editor / Python service and lyric processing                     |
+| `scripts/` / `tests/` / `web/tests/`                            | Setup and workflow scripts / backend and frontend tests              |
 
-Special thanks again to **[考拉醬 | 謎謎之音](https://www.youtube.com/@meme-koala)** for the Web visualization tool. Third-party code licenses are retained in [THIRD-PARTY-LICENSES](web/public/THIRD-PARTY-LICENSES). Font and scene licenses and attribution remain in [web/public/](web/public/).
+## Credits and licenses
 
-Visit [ReganOba on YouTube](https://www.youtube.com/@ReganOba) for more music.
+Special thanks to **[考拉醬 | 謎謎之音](https://www.youtube.com/@meme-koala)** for providing the Web visualization tool. LyricFlow builds on it with subtitle editing, media timelines, project saving and local recognition. Visit the channel to explore his work.
+
+Third-party code licenses are retained in [THIRD-PARTY-LICENSES](web/public/THIRD-PARTY-LICENSES). Font and scene licenses and attribution are in [web/public/](web/public/). Visit [Regan on YouTube](https://www.youtube.com/@ReganOba) for more music.

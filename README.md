@@ -1,69 +1,160 @@
-# LyricFlow｜歌詞字幕與音樂視覺化工具
+# LyricFlow｜歌詞對時與音樂影片製作
 
 **繁體中文** | [English](README.en.md)
 
-LyricFlow 將歌曲、歌詞、圖片與影片整合成可編輯的音樂視覺化作品，提供字幕時間軸、手動歌詞對時、場景特效與影片匯出。你可以直接使用線上工具，也可以在自己的電腦安裝 Python 辨識服務。
+將歌曲、歌詞、圖片與影片組合成音樂影片。LyricFlow 提供字幕時間軸、手動對時、音樂視覺化、場景特效與影片匯出；安裝本機服務後，也能使用自動辨識與精準歌詞對齊。
 
-**[開啟線上視覺化工具](https://lyric-flow-seven.vercel.app/)**
+**[開啟線上工具](https://lyric-flow-seven.vercel.app/)** · [快速開始](#快速開始) · [本機安裝](#本機安裝) · [歌曲資料夾工作流](#用歌曲資料夾製作完整素材) · [常見問題](#常見問題) · [文件導覽](#文件導覽)
 
-> **Vercel 線上版為「無自動辨識版本」。**
-> 線上網站只部署 Vue 前端，沒有 Python 後端、辨識引擎或模型。你可以匯入歌曲與字幕、編輯歌詞、手動對時及匯出影片，但不提供自動辨識或自動歌詞對齊。需要辨識時，請使用下方的本機版。
+> 線上版可編輯影音、手動對時與匯出影片，**不提供自動辨識或自動歌詞對齊**。這兩項功能需要在自己的電腦安裝 Python 服務及對應模型。
 
-## 特別感謝：考拉醬 | 謎謎之音
+Web 視覺化編輯器以 **[考拉醬 | 謎謎之音](https://www.youtube.com/@meme-koala)** 提供的工具為基礎，特別感謝他的分享。
 
-**特別感謝 [考拉醬 | 謎謎之音](https://www.youtube.com/@meme-koala) 提供 Web 視覺化工具。**
+## 選擇使用方式
 
-LyricFlow 的 Web 視覺化編輯器以他提供的工具為基礎，整合字幕編輯、影音時間軸、專案保存與本機辨識流程。謝謝考拉醬的分享，讓這個專案能將歌詞字幕與音樂視覺化結合，提供創作者更多製作音樂影片的方式。
+| 使用方式                                       | 適合情境                             | 需要安裝                        |
+| ---------------------------------------------- | ------------------------------------ | ------------------------------- |
+| [線上版](https://lyric-flow-seven.vercel.app/) | 直接編輯字幕、手動對時、製作影片     | 不需要                          |
+| [本機純前端版](#本機純前端版)                  | 在自己的電腦執行相同的視覺化工具     | Node.js                         |
+| [本機完整服務](#本機辨識與歌詞對齊)            | 自動辨識、依正確歌詞對齊，或串接 API | Node.js、Python、所需引擎與模型 |
 
-歡迎前往 **[考拉醬 | 謎謎之音的 YouTube 頻道](https://www.youtube.com/@meme-koala)**，看看他的作品並支持他！
-
-## 線上版與本機版
-
-| 項目                         | Vercel 線上版                                        | 本機版（Vue + Python）                |
-| ---------------------------- | ---------------------------------------------------- | ------------------------------------- |
-| 使用方式                     | [直接開啟網站](https://lyric-flow-seven.vercel.app/) | 安裝後於 `http://127.0.0.1:8080` 使用 |
-| 影音素材、字幕編輯與手動對時 | 支援                                                 | 支援                                  |
-| 視覺化、場景特效與影片匯出   | 支援，依瀏覽器能力                                   | 支援，依瀏覽器能力                    |
-| 專案下載與瀏覽器草稿         | 支援                                                 | 支援                                  |
-| 自動辨識／歌詞對齊           | **不提供**                                           | 安裝辨識引擎與模型後提供              |
-| Python 與模型                | 不需要                                               | 需要                                  |
-
-線上版的素材編輯、預覽與匯出在瀏覽器執行，不會將歌曲送往 Python 辨識服務。「開始對時」是由使用者邊聽歌曲、邊標記歌詞時間的手動功能；自動圖片編排、頻譜與視覺特效也不代表自動辨識。
+三種方式都支援素材匯入、時間軸編輯、場景、專案保存與影片匯出。線上版的素材編輯、預覽與匯出在瀏覽器內執行，不會將歌曲送往 Python 辨識服務。
 
 ## 主要功能
 
-- **影音素材與時間軸**：匯入音訊、圖片、影片，編排畫面與音軌，支援片段移動、裁切、分割、複製及音量調整。
-- **字幕編輯**：匯入 SRT、LRC、TXT，逐句輸入或貼上歌詞，搜尋取代，調整字幕起訖時間。
-- **圖片與歌詞對齊**：先匯入圖片，再用只含檔名、時間與歌詞的 JSON 建立字幕和連續圖片片段，涵蓋前奏、間奏與片尾。
-- **拖曳框選**：在字幕軌道空白處框選多句，整批移動、複製或刪除，並支援復原／重做。
-- **手動歌詞對時**：播放歌曲並逐句標記，可復原上一句、插入空白時間點，完成後匯出字幕。
-- **音樂視覺化**：頻譜、波形、光球、黑膠、背景轉場、氛圍特效及內建沉浸場景。
-- **畫面配置**：16:9、1:1、9:16 比例，支援歌曲資訊、字型、Logo、疊圖與色度去背。
-- **作品保存**：下載包含素材與設定的 `.resonance` 專案，或使用目前瀏覽器中的自動草稿。
-- **匯出**：下載 SRT／LRC 字幕，或錄製畫面與音訊，依瀏覽器支援輸出 MP4／WebM。
+- **字幕與對時**：匯入 SRT／LRC／TXT／Timeline JSON，逐句編輯、搜尋取代、手動標記、拖曳框選與整批調時，支援復原／重做。
+- **影音時間軸**：編排圖片、影片與多音軌，移動、裁切、分割、複製片段，調整音量及連動字幕。
+- **圖片字幕匯入**：以圖片檔名、時間與歌詞建立分鏡，讓畫面涵蓋前奏、間奏與片尾。
+- **音樂視覺化**：頻譜、波形、光球、黑膠、轉場與沉浸場景；支援 16:9、1:1、9:16、中文字型、Logo、疊圖與色度去背。
+- **保存與匯出**：瀏覽器自動草稿、包含素材的 `.resonance` 專案、SRT／LRC／Timeline JSON，以及依瀏覽器支援輸出的 MP4／WebM。
+- **本機歌詞處理**：既有 ASR 歌詞比對，以及保留原文、提供可用逐字時間的精準歌詞對齊；可透過 API 或 CLI 使用。
 
-操作與功能細節見 [Web 前端文件](web/README.md)。
+## 快速開始
 
-本機新增共用 **Lyrics Timeline Engine（Phase 1）**：提供正確歌詞的 forced alignment、
-JSON／SRT、逐字高亮與字幕微調，也可從 MyCut 建立獨立字幕軌。
-安裝與操作見 [共用歌詞時間軸](LYRICS_ENGINE.md)；長間奏建議啟用人聲分離。
+1. **加入歌曲**：開啟[線上工具](https://lyric-flow-seven.vercel.app/)，按「匯入音訊」。首次匯入會將第一首歌曲加入音軌。
+2. **加入歌詞**：按「匯入字幕」，或開啟「歌詞編輯 → 逐句字幕」輸入／貼上歌詞。
+3. **調整時間**：尚未對時的歌詞使用「開始對時」，邊聽邊標記；已有時間的字幕可直接在時間軸微調。本機版也可使用下方的自動對齊功能。
+4. **編排畫面**：匯入圖片／影片，選擇場景與特效。需要畫面固定跟隨歌曲時間時，使用「手動時間軸」或圖片字幕 JSON。
+5. **匯出影片**：在「匯出設定」選擇尺寸、幀率、畫質與範圍，再按播放器的「開始錄影」。只需字幕時，使用歌詞編輯區的下載按鈕。
+6. **保存作品**：確認草稿已儲存；要備份或換裝置，按「儲存專案」下載 `.resonance`。
 
-## 線上版快速開始
+手動對時快捷鍵：**空白鍵／→** 標記、**←** 復原、**0** 插入空白時間點、**Enter** 完成。取消對時會保留原字幕。
 
-1. 開啟 [LyricFlow 線上工具](https://lyric-flow-seven.vercel.app/)，按「匯入音訊」加入歌曲。
-2. 已有字幕時，使用「匯入字幕」加入 SRT／LRC／TXT；也可開啟「歌詞編輯」，在「逐句字幕」中新增或貼上歌詞。
-3. 歌詞尚未對時時，按「開始對時」，邊聽歌曲邊標記；已有時間的字幕可直接在下方時間軸微調。
-4. 匯入圖片／影片，調整畫面、場景與特效。影片與指定片段編排可使用「手動時間軸」模式。
-5. 在「匯出設定」選擇尺寸、幀率、畫質與範圍，再按播放器錄影鍵輸出影片；只需要字幕時，使用歌詞編輯區的 SRT／LRC 按鈕。
-6. 離開前確認草稿狀態；需要備份或換裝置編輯時，按「儲存專案」下載 `.resonance` 檔案。
+影片採**即時錄製**，所需時間取決於選定區段長度。支援直接存檔的瀏覽器可邊錄邊寫入磁碟；其他瀏覽器使用約 **256 MiB** 記憶體暫存，達上限時會停止並保存已錄內容。停止後請等待存檔完成，格式與效能依瀏覽器而異。
 
-手動對時期間：空白鍵或右方向鍵標記目前歌詞、左方向鍵復原、`0` 插入空白時間點、Enter 完成；也可使用畫面按鈕。取消對時會保留原字幕。
+## 本機安裝
 
-影片目前採即時錄製，錄製所需時間會隨選定區段長度增加。支援直接存檔的瀏覽器（例如桌面 Chrome／Edge）會在錄影前讓你選擇儲存位置，並邊錄邊寫入檔案，可匯出超過 256 MiB 的影片。停止後請等待存檔完成。其他瀏覽器使用記憶體暫存，累積至約 256 MiB 時仍會停止並保存已錄內容。MP4／WebM 格式支援與實際效能取決於瀏覽器。
+以下指令皆在專案根目錄執行，也就是能看到 `app.py` 與 `package.json` 的資料夾。
+
+### 本機純前端版
+
+需要 **Node.js 22.12 以上**，不需要 Python。
+
+```sh
+npm ci
+npm run build:static
+npm run preview:static
+```
+
+開啟終端機顯示的網址。此模式與線上版相同，不提供自動辨識，建置輸出為 `web/dist-static/`。
+
+### 本機辨識與歌詞對齊
+
+需要 **Node.js 22.12 以上**。以下使用 **Python 3.12**，供主服務與對齊引擎共用安裝流程。主服務可使用 3.12 以上，但對齊依賴目前固定為 NumPy 1.26.4，其[支援範圍為 Python 3.9–3.12](https://numpy.org/devdocs/release/1.26.4-notes.html)，請勿直接以 Python 3.13／3.14 建立新的對齊環境。
+
+初次安裝需連網下載套件與模型；引擎可使用本機 CPU，不需要 NVIDIA GPU。
+
+**1. 建立前端與 Python 環境**
+
+macOS／Linux：
+
+```sh
+npm ci
+npm run build
+python3.12 -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements.txt
+```
+
+<details>
+<summary>Windows：建立環境</summary>
+
+安裝 Python x64（含 Python Launcher），在 PowerShell 執行：
+
+```powershell
+npm ci
+npm run build
+py -3.12 -m venv .venv
+.venv\Scripts\python.exe -m pip install -r requirements.txt
+```
+
+下方指令中的 `python` 請改用 `.venv\Scripts\python.exe`。
+
+原生 Windows 仍待實機驗證；也可在 WSL2 中依 Linux 步驟操作。不同作業系統請各自建立 `.venv/`、`.venv-alignment/` 與 `.local/`。
+
+</details>
+
+**2. 安裝需要的引擎，可擇一或兩者都裝**
+
+| 功能              | 操作入口         | 處理方式                                       | 音檔長度上限 |
+| ----------------- | ---------------- | ---------------------------------------------- | ------------ |
+| 精準歌詞對齊      | 「精準歌詞對齊」 | 依提供的正確歌詞定位，保留原文與可用的逐字時間 | 10 分鐘      |
+| 既有 ASR 歌詞比對 | 「自動辨識」     | 先辨識音訊，再與提供的歌詞比對                 | 30 分鐘      |
+
+精準歌詞對齊：
+
+```sh
+python scripts/setup_alignment.py --separation
+```
+
+會建立獨立的 `.venv-alignment/`，安裝對齊模型及人聲分離，需要數 GB 空間。省略 `--separation` 可只安裝原音對齊。此引擎不依賴下方的 whisper.cpp；詳細操作與 MyCut 串接見[歌詞時間軸文件](LYRICS_ENGINE.md)。
+
+既有 ASR 歌詞比對：
+
+```sh
+python -m pip install -r requirements-build.txt
+python scripts/setup.py
+```
+
+此步驟編譯 whisper.cpp，將引擎與模型放入 `.local/`。macOS 需 Command Line Tools（`xcode-select --install`），Linux 需 C/C++ 編譯工具與對應的 `venv` 套件；Windows 需 Visual Studio 2022 Build Tools 的「使用 C++ 的桌面開發」工作負載，也可雙擊 `setup-windows.cmd` 完成 ASR 安裝。
+
+**3. 啟動服務**
+
+```sh
+python app.py --open
+```
+
+開啟 `http://127.0.0.1:8080`，使用期間保留終端機，按 **Ctrl+C** 關閉。下次啟動不必重新安裝：
+
+```sh
+# macOS / Linux
+.venv/bin/python app.py --open
+```
+
+Windows 使用 `.venv\Scripts\python.exe app.py --open`。已安裝 ASR 引擎時，也可使用 `start-mac.command` 或 `start-windows.cmd` 啟動。
+
+<details>
+<summary>升級既有 Python 環境</summary>
+
+先停止服務，將舊 `.venv` 改名備份，再重建環境並安裝相依套件；需要安裝對齊引擎時請使用 Python 3.12。虛擬環境不會隨系統 Python 自動升級；`.local/` 的既有引擎與模型可繼續使用。僅執行主服務時可使用較新的 Python，3.13 以上會自動安裝 `audioop-lts`。
+
+</details>
+
+### 使用本機對齊功能
+
+1. 匯入歌曲，確認要處理的歌曲已加入音軌。
+2. 開啟已安裝引擎的操作入口，貼上完整歌詞，每行一句，重複副歌也完整列出。
+3. 精準歌詞對齊請移除未唱出的 `[Verse]` 等標記；長前奏、間奏或伴奏較強時可選擇「分離人聲」。
+4. 送出後查看進度。已有字幕會先確認取代；成功前、失敗或取消時，原字幕都會保留。
+5. 完成後逐句試聽與微調。需要保留逐字時間時下載 **Timeline JSON**，SRT／LRC 不保存逐字資訊。
+
+兩種模式皆支援 WAV、MP3、M4A、AAC、FLAC、AIFF，音檔上限 **200 MiB**，歌詞上限 **12,000 字元**；API 上傳的 UTF-8 歌詞檔上限 **64 KiB**。長音、和聲、間奏與重複段落可能影響對齊，結果仍需試聽。ASR 未定位句不會放入輸出的 SRT，請補辨識或手動確認後再製作完整素材。
+
+重整後若遇到既有工作，可在彈窗查看狀態、停止或下載完成結果。建立後 **5 分鐘仍未開始上傳音訊**的工作，會在下次查詢或提交時釋放名額；正常上傳與辨識不受此期限影響。API、補辨識與 Python 客戶端見 [API.md](API.md)。
 
 ## 用歌曲資料夾製作完整素材
 
-每首歌建立一個資料夾，放入一首音檔與一份 UTF-8 TXT 完整歌詞。可使用下列位置（不存在時自行建立），也可指定其他本機資料夾：
+每首歌準備一個資料夾，放入一首音檔及一份 UTF-8 TXT 完整歌詞；音檔與歌詞檔名可自行命名：
 
 ```text
 input/我的歌曲/
@@ -72,201 +163,96 @@ input/我的歌曲/
   專輯名稱.txt       # 選填，固定此檔名，內容為單行專輯名稱
 ```
 
-音檔與歌詞檔可自行命名。Suno 的 `[Verse]`、`[Chorus]` 等標記可保留，但重複副歌須完整列出。交給 Codex 或其他 AI 時，可直接說：
+交給能讀寫本機檔案、使用對時服務並生成／檢視圖片的 AI，可直接使用：
 
-> 請先讀此專案的 AGENTS.md 與 WORKFLOW.md，處理 input/我的歌曲，產出 SRT、獨立分鏡圖、歌詞與圖片對齊 JSON，以及含專輯名稱的封面。若已有 output，請核對來源與進度後接續製作。
+> 請先讀此專案的 AGENTS.md 與 WORKFLOW.md，處理 input/我的歌曲，產出完整 SRT、獨立分鏡圖、圖片字幕 JSON，以及含專輯名稱的封面。若已有 output，請核對來源與進度後接續製作。
 
-這是由 AI 接到指令後執行的工作流，放入檔案不會自動開始。AI 需能讀寫資料夾、使用本機對時服務或 CLI，以及生成和檢視圖片；本機辨識安裝方式見下方。Python 輔助腳本負責輸入檢查與字幕／JSON 匯出，圖片由 AI 的影像工具生成。
+本工作流使用既有 ASR 引擎的對時結果；開始前請先安裝該引擎並啟動本機服務。放入檔案不會自動開始製作。來源歌詞可保留 Suno 段落標記，但重複副歌須完整列出。
 
-預設分鏡為 **16:9 橫式、同一套人物與畫風、不含文字、保留字幕空間**；封面為 **1:1 方形並印上專輯名稱**。可在指令中指定畫風、張數、比例與名稱；未指定名稱則由 AI 依歌詞命名。成果放在歌曲資料夾的 `output/`：
+預設為 **16:9 分鏡圖、人物與畫風一致、不含文字並保留字幕空間**，以及 **1:1、含專輯名稱的封面**。可在指令中指定畫風、張數、比例與名稱。
 
-| 產物                                             | 用途                                                 |
-| ------------------------------------------------ | ---------------------------------------------------- |
-| `lyrics.srt`                                     | 完整歌詞與逐句時間，可用於其他剪輯工具               |
-| `images/`                                        | 每個分鏡的獨立圖檔                                   |
-| `image-subtitles.json`                           | 依 `name` 對應圖檔，同時匯入字幕和圖片編排           |
-| `cover/album-cover.png`、`album.md`              | 含專輯名稱的封面、名稱與命名理由；封面不自動插入影片 |
-| `storyboard.md`、`storyboard.json`、`prompts.md` | 分鏡表、切換起點與生成提示詞                         |
-| `source.json`、`PROGRESS.md`、對時與歌詞紀錄     | 來源、使用者需求、進度及接手所需資料                 |
+成果放在該歌曲的 `output/`，包含 `lyrics.srt`、`images/`、`image-subtitles.json`、封面、分鏡與來源／進度紀錄。接手時先讀 `output/PROGRESS.md`，再核對來源及實際成果。完整交付與驗收規格見 [WORKFLOW.md](WORKFLOW.md)；私人素材與成果不納入 Git，請另行備份。
 
-[AGENTS.md](AGENTS.md) 是 AI 的任務入口，[WORKFLOW.md](WORKFLOW.md) 定義完整流程、交付格式與驗收條件；每首歌的 `output/PROGRESS.md` 記錄實際進度。換 AI 時讓它先讀這些文件，再核對 `source.json` 與現有成果即可接續。`input/` 與 `output/` 不納入 Git，請另行備份或提供給接手者。
+### 把分鏡匯入編輯器
 
-## 匯入圖片與歌詞 JSON
+1. 匯入原始歌曲，確認音軌長度。
+2. 匯入 `images/` 中的圖片，保留檔名，避免同名素材。
+3. 按「匯入圖片字幕 JSON」開啟 `image-subtitles.json`。它會切換至手動時間軸，**取代 V1 畫面片段與整份字幕**，保留音訊、素材庫與樣式，不必再匯入 SRT。
+4. 試聽字幕與圖片切換，再錄製影片。封面不會自動插入影片。
 
-線上版與本機版都可使用已製作完成的圖片 JSON：
+圖片字幕 JSON 使用 `version: 1`，與保存逐字時間的 **Timeline JSON 是不同格式**。檔名須與已匯入圖片完全相符，歌詞不可空白；第一張圖從 0 秒顯示，最後一張延伸至現有音軌或字幕結尾。下載[範例 JSON](web/public/examples/image-subtitles.json)，欄位、限制與相容格式見[圖片字幕格式](web/public/examples/image-subtitles.md)。
 
-1. 匯入原始歌曲，確認已加入音軌且長度正確。
-2. 在「歌詞編輯 → 素材」加入 `images/` 中的圖片，保留檔名，避免同名素材。
-3. 按「匯入圖片字幕 JSON」開啟 `image-subtitles.json`。它會切換至手動時間軸，取代 V1 畫面片段與整份字幕，保留音訊、素材庫和樣式；無需再匯入 SRT。
-4. 預覽字幕和切換位置，再依一般匯出流程錄製影片。
+## 保存與資料位置
 
-JSON 的 `version` 固定為 `1`；每段包含 `name`、`startTime`、`endTime`、`content`。`name` 必須與素材庫唯一圖檔名稱完全一致（含副檔名及大小寫），不需 `image` 或 Base64。時間為整首歌曲的秒數，每段至少 0.05 秒且不可重疊；`content` 必須是非空白歌詞。檔案上限 **64 MiB、1～500 個段落**，多句可共用同一張圖。
+| 資料              | 保存位置與用途                                                                   |
+| ----------------- | -------------------------------------------------------------------------------- |
+| 瀏覽器草稿        | 目前瀏覽器的 IndexedDB，只保留最新一份；重整後選擇恢復，儲存失敗保留前次成功內容 |
+| `.resonance` 專案 | 使用「儲存專案」下載，包含素材、字幕、時間軸與設定，適合備份或換裝置             |
+| 本機辨識工作      | `.cache/interface/`，包含上傳音檔、歌詞、結果與紀錄                              |
+| 本機快取與模型    | `.cache/`、`.local/`，依引擎保存轉檔、辨識／對齊快取與模型                       |
 
-第一張圖從 0 秒顯示，之後每張延續到下一段開始，最後一張延伸至現有音軌或最後一句字幕結尾，以較晚者為準。間奏無須建立空白字幕；若錯誤指出某段 `content` 空白，應檢查並補回該段原歌詞。後續延長音軌時，重新匯入 JSON 或手動延長最後一張圖。
+草稿依瀏覽器與網站網址（含連接埠）分開，線上版與本機版不會自動共用。多分頁編輯發生衝突時，需選擇保留的版本。
 
-格式或圖片驗證失敗會保留目前作品。可下載 [JSON 範例](web/public/examples/image-subtitles.json)，欄位與舊格式相容說明見 [圖片字幕格式](web/public/examples/image-subtitles.md)。
+「重置」會清空目前作品與該網站的草稿；清除瀏覽器網站資料也會刪除草稿。兩者都不會刪除電腦原始檔、已下載專案或 Python 後端工作資料。清理後端快取前，請先備份結果並停止服務。
 
-## 常用畫面設定
+## 常見問題
 
-- **圖片隨音樂放大縮小**：將「作品設定 → 畫面與背景 → 背景律動」設為 `0`；若啟用了整個畫面的衝擊效果，再關閉「氛圍特效 → 節奏鏡頭衝擊」。
-- **Logo**：新作品自動載入內建的 `web/public/logo.png`，預設右下角、尺寸 `20%`，可在「Logo 與疊圖」調整、更換或清除；開啟舊專案或恢復草稿會沿用其儲存內容。
-- **圖片切換與歌曲同步**：預設「自動編排圖片」使用獨立輪播時鐘，播放、暫停或跳轉不會重設它；依歌詞換頁也只使用字幕間距作為輪播節奏。需要固定歌詞對應固定圖片時，使用上述 JSON 或手動時間軸。切回自動編排會清空 V1 畫面片段。
+| 問題                         | 處理方式                                                                                                 |
+| ---------------------------- | -------------------------------------------------------------------------------------------------------- |
+| 線上版找不到自動辨識？       | 線上版只提供手動對時；自動功能請使用本機服務並安裝對應引擎。                                             |
+| 本機首頁提示尚未建置？       | 在專案根目錄執行 `npm ci`、`npm run build`；Flask 使用 `web/dist/`。                                     |
+| 圖片沒有跟隨播放／跳轉？     | 自動編排採獨立輪播時鐘；固定歌詞配圖請用圖片字幕 JSON 或手動時間軸。切回自動模式會清空 V1。              |
+| 如何關閉圖片隨音樂縮放？     | 將「作品設定 → 畫面與背景 → 背景律動」設為 `0`，並視需要關閉「氛圍特效 → 節奏鏡頭衝擊」。                |
+| 如何更換或移除預設 Logo？    | 在「Logo 與疊圖」調整。單純載入 Logo 不會建立空白草稿，首次保存草稿會包含它。                            |
+| 換瀏覽器／裝置後找不到作品？ | 草稿不跨裝置同步；在原環境下載 `.resonance`，再到新環境「開啟專案」。                                    |
+| SRT 匯入後沒有逐字高亮？     | SRT 只保存逐句時間；需保留逐字資訊時使用 Timeline JSON。修改文字或裁切後，失效的逐字資訊會退回逐句字幕。 |
 
-## 草稿、專案與重置
+## 開發與部署
 
-「專案與草稿」可開關自動儲存、立即儲存、恢復或刪除草稿，並查看儲存時間、素材數與狀態。重新整理後會先讓你選擇恢復或以目前作品取代，避免直接覆寫既有草稿。
-
-草稿保存在目前瀏覽器的 IndexedDB，只保留最新一份。修改字幕或設定時會沿用已儲存的素材；儲存失敗會提示，並保留前一次成功的草稿。多分頁修改同一份草稿時會要求選擇要保留的版本。
-
-- 草稿依網站網址、連接埠與瀏覽器分開，本機、Vercel 正式網站與預覽網址不會自動共用。
-- 清除網站資料或確認「重置」會刪除該網站的草稿；重置也會清空目前媒體、字幕與編輯內容。
-- `.resonance` 專案包含匯入素材、字幕、時間軸與設定，可用「開啟專案」還原，是換裝置或長期保存的方式。
-- 重置不會刪除電腦上的原始檔、已下載專案、收藏風格或 Python 後端工作資料。
-
-## 在本機使用純前端版
-
-只使用視覺化工具不需要 Python。安裝 Node.js 22.12 以上，下載或 clone 專案後，在專案根目錄執行：
-
-```sh
-npm ci
-npm run build:static
-npm run preview:static
-```
-
-開啟終端機顯示的網址。此版本與 Vercel 使用相同的靜態建置模式，**不提供自動辨識**，輸出目錄為 `web/dist-static/`。
-
-## 部署自己的 Vercel 網站
-
-將原始碼推送至 GitHub，於 Vercel 選擇 **Add New → Project** 匯入倉庫，設定：
-
-| 設定                  | 值                     |
-| --------------------- | ---------------------- |
-| Root Directory        | `web`                  |
-| Framework Preset      | `Vite`                 |
-| Install Command       | `npm ci`               |
-| Build Command         | `npm run build:static` |
-| Output Directory      | `dist-static`          |
-| Environment Variables | 不需要新增             |
-
-[web/vercel.json](web/vercel.json) 已包含建置設定，Vercel 只發布靜態前端，不部署 Python。首次部署後，到 **Settings → Environments → Production → Branch Tracking** 確認正式分支；此專案目前使用 `master`。之後推送到正式分支會自動更新網站，其他分支可產生預覽部署。詳見 [Vercel Git 部署說明](https://vercel.com/docs/git#customizing-the-production-branch)。
-
-`web/` 是整合後的前端原始碼。`video_visual/` 是本機匯入時的原始工具備份，不作為部署目錄，也不需要推送。
-
-## 本機版：啟用自動辨識
-
-只有安裝並啟動 Python 服務的本機版提供自動辨識。前端一般建置 `npm run build` 輸出至 `web/dist/`，與無辨識版的 `web/dist-static/` 分開。
-
-### 環境需求
-
-- Node.js 22.12 以上：用於前端安裝與建置。
-- Python 3.12 以上；主程式已驗證支援 3.12／3.13／3.14。
-- macOS／Linux 的 C/C++ 編譯工具；Windows x64 使用 Visual Studio 2022 Build Tools 的「使用 C++ 的桌面開發」工作負載。
-- 初次安裝需要網路下載相依套件、whisper.cpp 與模型，辨識使用本機 CPU，不需要 GPU。
-
-### macOS / Linux
-
-在能看到 `app.py` 的專案根目錄執行。請確認 `python3` 符合上述版本需求；macOS 若缺少編譯工具，先執行 `xcode-select --install`，Linux 則需安裝編譯工具及對應版本的 `venv`。
-
-```sh
-npm ci
-npm run build
-python3 -m venv .venv
-source .venv/bin/activate
-python -m pip install -r requirements.txt -r requirements-build.txt
-python scripts/setup.py
-python app.py --open
-```
-
-安裝腳本會驗證下載檔、編譯 whisper.cpp，並將引擎與模型放在 `.local/`。已完成安裝後，日常啟動可直接執行：
-
-```sh
-.venv/bin/python app.py --open
-```
-
-macOS 也可以在 Finder 雙擊專案根目錄的 `start-mac.command` 啟動。
-
-瀏覽器開啟 `http://127.0.0.1:8080`。使用期間保留終端機，按 Ctrl+C 關閉服務。
-
-升級既有環境時，先停止服務並將舊 `.venv` 改名備份，再使用所選的 Python 3.12 以上版本重跑上述 `venv` 與套件安裝指令。虛擬環境不會隨系統 Python 自動升級；`.local/` 中的辨識引擎與模型可繼續使用。Python 3.13 以上會自動安裝 `audioop-lts`，保留原有 PCM 音訊轉換行為。
-
-### Windows
-
-先安裝 Node.js、Python 3.12 以上 x64（含 Python Launcher）及 Visual Studio 2022 Build Tools。在專案根目錄執行 `npm ci`、`npm run build`，再依序執行：
-
-1. 雙擊 `setup-windows.cmd` 安裝 Python 相依套件、辨識引擎與模型。
-2. 安裝完成後，雙擊 `start-windows.cmd` 開啟本機網頁。
-
-安裝腳本以 `py -3` 建立新環境；已有 `.venv` 時會驗證其版本。若要指定版本，可先執行例如 `py -3.12 -m venv .venv`，再執行安裝腳本。低於 3.12 的舊環境需先改名備份。
-
-原生 Windows 支援仍待實機驗證。也可透過 WSL2，在 Ubuntu 中依照上方 Linux 流程安裝與啟動。不要跨作業系統共用 `.venv/` 或 `.local/`。
-
-### 辨識操作
-
-1. 匯入歌曲；若有多首，先將要辨識的歌曲加入音軌。
-2. 點右上角自動辨識圖示，滑鼠停留時會顯示「自動辨識」。
-3. 在彈窗選擇歌曲，每行輸入一句實際演唱的歌詞，按「送出」。
-4. 已有字幕時會先確認取代；取消確認會保留輸入並暫停送出。
-5. 辨識成功後才套用字幕；失敗或取消會保留原字幕。完成後在時間軸檢查及微調。
-
-本機辨識支援 WAV、MP3、M4A、AAC、FLAC、AIFF；音檔上限 **200 MiB、30 分鐘**，歌詞最多 **12,000 字元**，上傳的 UTF-8 歌詞文字檔最多 **64 KiB**。這些是辨識服務限制，與圖片 JSON、錄影容量限制不同。
-
-辨識與歌詞比對主要針對中文。長音、間奏、重複段落或較強的伴奏都可能影響對齊，結果仍需試聽確認。未定位句不會放入辨識輸出的 SRT，請檢查未定位／待檢查句數，補辨識或人工確認後再製作完整素材。補辨識與其他程式串接方式見 [API 文件](API.md)。
-
-CLI 使用 PCM WAV 與歌詞文字檔：
-
-```sh
-python lyric_flow.py /path/to/song.wav /path/to/lyrics.txt --threads 2 --output output
-```
-
-輸出包含 `.draft.srt`、`.review.txt` 與 `.alignment.json`；這裡的 `.draft.srt` 是辨識輸出檔，與瀏覽器草稿不同。
-
-### Python 本機資料
-
-本機版的上傳歌曲、歌詞、工作結果與紀錄預設位於 `.cache/interface/`，轉檔與辨識快取位於 `.cache/lyric-flow/`。取消辨識或按網頁「重置」不會清除這些後端檔案。需要清理時，先備份結果並停止服務，再刪除對應快取。
-
-## 開發與驗證
-
-在專案根目錄執行：
+開發模式：
 
 ```sh
 npm ci
 npm run dev
 ```
 
-開發模式保留辨識功能，`/api` 會轉接至本機 `http://127.0.0.1:8080`；使用辨識時另開終端機啟動 Python。修改後執行 `npm run build` 更新本機版，或 `npm run build:static` 更新純前端版。
+`/api` 會轉接至 `http://127.0.0.1:8080`；需要辨識時，另開終端機啟動 Python 服務。
+
+| 指令                                                        | 用途                                        |
+| ----------------------------------------------------------- | ------------------------------------------- |
+| `npm run build`                                             | 建置 `web/dist/`，供本機 Flask 使用         |
+| `npm run build:static`                                      | 建置無辨識版至 `web/dist-static/`           |
+| `npm run format:check`、`npm run typecheck`、`npm run lint` | 前端格式、型別與靜態檢查                    |
+| `npm test`                                                  | 前端單元測試                                |
+| `npm run test:e2e`                                          | 以 Vite 與本機 Google Chrome 執行瀏覽器測試 |
+| `npm run test:static`                                       | 建置並驗證純前端版，不啟動 Python           |
+
+完整本機檢查（使用已安裝相依套件的 `.venv`）：
 
 ```sh
-npm run format:check
-npm run typecheck
-npm run lint
-npm test
-npm run test:static
+.venv/bin/python -m pip install -r requirements-dev.txt
+.venv/bin/python scripts/check.py --browser
 ```
 
-`test:static` 會建置無辨識版，使用本機 Google Chrome 與靜態預覽伺服器檢查操作，不啟動 Python。若已安裝 Python 相依套件，可再執行完整本機版檢查：
+Windows 請改用 `.venv\Scripts\python.exe`。檢查腳本會建置前端、啟動暫時服務並在結束後清理；需要本機 Google Chrome。真實歌曲測試需另設素材，選用引擎有獨立測試，見[架構與驗證](ARCHITECTURE.md#開發與驗證)。
 
-```sh
-python -m pip install -r requirements-dev.txt
-python scripts/check.py --browser
-```
+部署 Vercel 時，Root Directory 設為 **`web`**，使用 `npm run build:static` 與輸出目錄 `dist-static`。[web/vercel.json](web/vercel.json) 已提供建置設定，不需要 Python 或 API Key。完整步驟見[前端部署文件](web/README.md#vercel只部署-vue-前端)。
 
-需要外部歌曲與模型的實際辨識測試預設略過，設定方式見 [架構與驗證文件](ARCHITECTURE.md#開發與驗證)。`tests/` 與 `web/tests/` 是應保留在版本控制中的測試原始碼；測試產物、私人素材、模型與快取由 `.gitignore` 排除。
+## 文件導覽
 
-## 專案結構與來源
+| 文件／目錄                                             | 內容                                       |
+| ------------------------------------------------------ | ------------------------------------------ |
+| [web/README.md](web/README.md)                         | 編輯器操作、場景、影片匯出、前端開發與部署 |
+| [LYRICS_ENGINE.md](LYRICS_ENGINE.md)                   | 精準歌詞對齊、逐字字幕與 MyCut 串接        |
+| [API.md](API.md)                                       | 本機 API、工作管理、補辨識與 Python 客戶端 |
+| [WORKFLOW.md](WORKFLOW.md)／[AGENTS.md](AGENTS.md)     | AI 歌曲製作、交付驗收與接手規則            |
+| [ARCHITECTURE.md](ARCHITECTURE.md)                     | 模組責任、工作生命週期與完整驗證流程       |
+| [圖片字幕格式](web/public/examples/image-subtitles.md) | 分鏡 JSON 欄位、限制與範例                 |
+| `web/src/`／`lyricflow/`                               | Vue 編輯器／Python 服務與歌詞處理          |
+| `scripts/`／`tests/`／`web/tests/`                     | 安裝與工作流腳本／後端與前端測試           |
 
-| 路徑                        | 用途                                       |
-| --------------------------- | ------------------------------------------ |
-| `web/src/`                  | Vue 3、TypeScript 視覺化編輯器             |
-| `web/public/`               | 字型、場景與相關素材署名                   |
-| `web/vercel.json`           | Vercel 純前端部署設定                      |
-| `lyricflow/`                | Python API、辨識與歌詞對齊流程             |
-| `app.py` / `lyric_flow.py`  | 本機網頁服務 / 辨識 CLI                    |
-| `lyric_flow_client.py`      | 本機辨識 API 的 Python 客戶端              |
-| `tests/` / `web/tests/`     | 後端 / 前端與瀏覽器測試                    |
-| `scripts/`                  | 安裝、檢查、歌曲資料夾準備與分鏡匯出工具   |
-| `AGENTS.md` / `WORKFLOW.md` | AI 任務入口 / 歌曲製作與交付規格           |
-| `input/` / `output/`        | 私人歌曲與生成成果，依需求建立，不納入 Git |
+## 致謝與授權
 
-Web 視覺化工具特別致謝 **[考拉醬 | 謎謎之音](https://www.youtube.com/@meme-koala)**。第三方程式授權保留於 [THIRD-PARTY-LICENSES](web/public/THIRD-PARTY-LICENSES)，字型與場景素材的授權、來源署名保留在 [web/public/](web/public/)。
+特別感謝 **[考拉醬 | 謎謎之音](https://www.youtube.com/@meme-koala)** 提供 Web 視覺化工具。LyricFlow 在此基礎上整合字幕編輯、影音時間軸、專案保存與本機辨識流程，歡迎前往頻道欣賞他的作品。
 
-也歡迎到 [Regan 的 YouTube 頻道](https://www.youtube.com/@ReganOba) 看更多音樂作品。
+第三方程式授權保留於 [THIRD-PARTY-LICENSES](web/public/THIRD-PARTY-LICENSES)，字型與場景素材的授權、來源署名位於 [web/public/](web/public/)。也歡迎到 [Regan 的 YouTube 頻道](https://www.youtube.com/@ReganOba) 看更多音樂作品。

@@ -1,4 +1,4 @@
-import { onBeforeUnmount, onMounted, shallowRef, watch } from 'vue';
+import { onBeforeUnmount, onMounted, ref, shallowRef, watch } from 'vue';
 import { processOverlay } from '../services/colorKey';
 import type { RenderResources } from '../engine/resources';
 import type { StudioSettings } from '../config/settings';
@@ -21,6 +21,9 @@ export function useMediaLibrary(
     core: null,
   });
   const layers = shallowRef<Layers>({ logo: null, overlay: null, core: null });
+  const layerRevision = ref(0);
+  const initializing = ref(true);
+  const defaultLogoRequest = new AbortController();
   let disposed = false;
 
   function release(media: VisualMedia | null) {
@@ -110,8 +113,13 @@ export function useMediaLibrary(
     core: ['coreImageRef', 'coreVideoRef'],
     overlay: ['overlayImgRef'],
   } as const;
-  function clearLayer(kind: LayerKind) {
+  function clearLayer(kind: LayerKind, edited = true) {
+    if (edited) layerRevision.value++;
     layerRequest[kind]++;
+    if (kind === 'logo' && edited) {
+      defaultLogoRequest.abort();
+      initializing.value = false;
+    }
     release(layers.value[kind]);
     layers.value = { ...layers.value, [kind]: null };
     layerFiles.value = { ...layerFiles.value, [kind]: null };
@@ -137,8 +145,8 @@ export function useMediaLibrary(
     commitLayer(kind, media, file);
   }
 
-  function commitLayer(kind: LayerKind, media: VisualMedia, file: File) {
-    clearLayer(kind);
+  function commitLayer(kind: LayerKind, media: VisualMedia, file: File, edited = true) {
+    clearLayer(kind, edited);
     layerFiles.value = { ...layerFiles.value, [kind]: file };
     layers.value = { ...layers.value, [kind]: media };
     const [imageRef, videoRef] = layerRefs[kind];
@@ -153,8 +161,11 @@ export function useMediaLibrary(
 
   onMounted(async () => {
     const request = ++layerRequest.logo;
+    const timeout = setTimeout(() => defaultLogoRequest.abort(), 20000);
     try {
-      const response = await fetch(`${import.meta.env.BASE_URL}logo.png`);
+      const response = await fetch(`${import.meta.env.BASE_URL}logo.png`, {
+        signal: defaultLogoRequest.signal,
+      });
       if (!response.ok) throw new Error('無法讀取預設 Logo。');
       const file = new File([await response.blob()], 'logo.png', { type: 'image/png' });
       if (disposed || request !== layerRequest.logo) return;
@@ -164,9 +175,12 @@ export function useMediaLibrary(
         release(media);
         return;
       }
-      commitLayer('logo', media, file);
+      commitLayer('logo', media, file, false);
     } catch {
       if (!disposed && request === layerRequest.logo) reportError('預設 Logo 載入失敗。');
+    } finally {
+      clearTimeout(timeout);
+      initializing.value = false;
     }
   });
 
@@ -182,6 +196,7 @@ export function useMediaLibrary(
   );
   onBeforeUnmount(() => {
     disposed = true;
+    defaultLogoRequest.abort();
     backgrounds.value.forEach(release);
     Object.values(layers.value).forEach(release);
   });
@@ -190,6 +205,8 @@ export function useMediaLibrary(
     backgrounds,
     layers,
     layerFiles,
+    layerRevision,
+    initializing,
     commitLayer,
     release,
     cancelBackgroundLoad,

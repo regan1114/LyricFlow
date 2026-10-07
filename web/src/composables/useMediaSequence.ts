@@ -48,11 +48,15 @@ export function useMediaSequence(
   const linkSubtitles = ref(false);
   const disabled = computed(() => blocked() || busy.value > 0);
   const duration = computed(() => sequenceDuration(clips.value));
+  type Timing = Pick<SubtitleCue, 'uid' | 'time' | 'endTime'>;
+  type TimingChange = { before: Timing; after: Timing };
   type Snapshot = {
     clips: MediaClip[];
     raw: string;
     selectedId: string | null;
-    subtitlesChanged?: boolean;
+    timings: Timing[];
+    subtitleRevision: number;
+    subtitleChanges?: TimingChange[];
   };
   const past = ref<Snapshot[]>([]);
   const future = ref<Snapshot[]>([]);
@@ -64,7 +68,19 @@ export function useMediaSequence(
     clips: clips.value.map((clip) => ({ ...clip })),
     raw: raw.value,
     selectedId: selectedId.value,
+    timings: subtitleEditor.items.value.map(({ uid, time, endTime }) => ({ uid, time, endTime })),
+    subtitleRevision: subtitleEditor.documentRevision.value,
   });
+  function timingChanges(value: Snapshot): TimingChange[] {
+    if (value.subtitleRevision !== subtitleEditor.documentRevision.value) return [];
+    const current = new Map(subtitleEditor.items.value.map((cue) => [cue.uid, cue]));
+    return value.timings.flatMap((before) => {
+      const after = current.get(before.uid);
+      return after && (before.time !== after.time || before.endTime !== after.endTime)
+        ? [{ before, after: { uid: after.uid, time: after.time, endTime: after.endTime } }]
+        : [];
+    });
+  }
   function begin() {
     if (!transaction) {
       transaction = snapshot();
@@ -77,38 +93,63 @@ export function useMediaSequence(
       (JSON.stringify(transaction.clips) !== JSON.stringify(clips.value) ||
         transaction.raw !== raw.value)
     ) {
-      transaction.subtitlesChanged = transaction.raw !== raw.value;
+      transaction.subtitleChanges = timingChanges(transaction);
       past.value = [...past.value.slice(-99), transaction];
       future.value = [];
     }
     transaction = null;
   }
   function restore(value: Snapshot) {
+    const current = new Map(subtitleEditor.items.value.map((cue) => [cue.uid, cue]));
+    const applicable =
+      value.subtitleRevision === subtitleEditor.documentRevision.value
+        ? (value.subtitleChanges ?? []).filter(({ after }) => {
+            const cue = current.get(after.uid);
+            return cue?.time === after.time && cue.endTime === after.endTime;
+          })
+        : [];
+    if (applicable.length && subtitleEditor.disabled.value) {
+      reportError('請先解鎖字幕軌道，再復原或重做連動操作。');
+      return null;
+    }
+    // Restore only this move's timings; keep later text edits, deletions and retiming.
+    if (applicable.length) {
+      subtitleEditor.begin();
+      for (const { before } of applicable)
+        subtitleEditor.update(before.uid, { time: before.time, endTime: before.endTime });
+      subtitleEditor.commit();
+    }
     clips.value = value.clips
       .filter((clip) => !visualLocked.value || clip.track !== 'V1')
       .map((clip) => ({ ...clip }));
-    if (value.subtitlesChanged && raw.value !== value.raw) raw.value = value.raw;
     selectedId.value = value.selectedId;
+    return applicable.map(({ before, after }) => ({ before: after, after: before }));
   }
   function cancel() {
-    if (transaction) restore({ ...transaction, subtitlesChanged: transaction.raw !== raw.value });
+    if (transaction) restore({ ...transaction, subtitleChanges: timingChanges(transaction) });
     transaction = null;
   }
   function undo() {
     if (disabled.value) return;
     commit();
-    const value = past.value.pop();
+    const value = past.value.at(-1);
     if (value) {
-      future.value.push({ ...snapshot(), subtitlesChanged: value.subtitlesChanged });
-      restore(value);
+      const current = snapshot();
+      const inverse = restore(value);
+      if (!inverse) return;
+      past.value.pop();
+      future.value.push({ ...current, subtitleChanges: inverse });
     }
   }
   function redo() {
     if (disabled.value) return;
-    const value = future.value.pop();
+    const value = future.value.at(-1);
     if (value) {
-      past.value.push({ ...snapshot(), subtitlesChanged: value.subtitlesChanged });
-      restore(value);
+      const current = snapshot();
+      const inverse = restore(value);
+      if (!inverse) return;
+      future.value.pop();
+      past.value.push({ ...current, subtitleChanges: inverse });
     }
   }
   function setVisualMode(mode: 'manual' | 'auto') {

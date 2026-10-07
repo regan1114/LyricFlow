@@ -10,6 +10,7 @@ MAX_AUDIO_BYTES = 200 * 1024 * 1024
 MAX_LYRICS_BYTES = 64 * 1024
 MAX_LYRICS_CHARACTERS = 12000
 MAX_AUDIO_SECONDS = 1800
+UPLOAD_WAIT_SECONDS = 300
 AUDIO_EXTENSIONS = frozenset({".wav", ".mp3", ".m4a", ".aac", ".flac", ".aiff", ".aif"})
 TERMINAL_STATUSES = frozenset({"done", "error", "cancelled"})
 COPY_CHUNK_BYTES = 1024 * 1024

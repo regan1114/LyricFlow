@@ -70,6 +70,54 @@ test('requires a song before opening the lyrics dialog', async ({ page }) => {
   await expect(page.getByRole('dialog', { name: '自動辨識', exact: true })).toBeHidden();
 });
 
+test('an abandoned job can be inspected and stopped before submitting a new song', async ({
+  page,
+}) => {
+  const id = 'a'.repeat(32);
+  let cancelled = false;
+  let uploads = 0;
+  await page.route('**/api/**', async (route) => {
+    const path = new URL(route.request().url()).pathname;
+    if (path === '/api/health') return route.fulfill({ json: { ready: true } });
+    if (path === `/api/jobs/${id}/cancel`) {
+      cancelled = true;
+      return route.fulfill({
+        json: { id, name: '前一首.wav', status: 'cancelled', message: '已停止' },
+      });
+    }
+    if (path === `/api/jobs/${id}`)
+      return route.fulfill({
+        json: { id, name: '前一首.wav', status: 'uploading', message: '等待歌曲上傳' },
+      });
+    if (path === '/api/jobs')
+      return cancelled
+        ? route.fulfill({ status: 201, json: { id: 'new-job' } })
+        : route.fulfill({ status: 409, json: { error: '已有工作正在處理', job_id: id } });
+    if (path.endsWith('/audio')) {
+      uploads++;
+      return route.fulfill({ status: 202, json: {} });
+    }
+    if (path.endsWith('/srt')) return route.fulfill({ body: recognized });
+    return route.fulfill({ json: { status: 'done', message: '已完成' } });
+  });
+  await open(page);
+  await page.getByRole('button', { name: '送出', exact: true }).click();
+  await expect(page.getByText('既有工作：前一首.wav')).toBeVisible();
+  await page.screenshot({ path: 'test-results/existing-job-desktop.png', fullPage: true });
+  await page.setViewportSize({ width: 390, height: 844 });
+  const dialog = page.getByRole('dialog');
+  expect(await dialog.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true);
+  await page.screenshot({ path: 'test-results/existing-job-mobile.png', fullPage: true });
+  expect(uploads).toBe(0);
+  expect(cancelled).toBe(false);
+  await page.getByRole('button', { name: '查看工作狀態' }).click();
+  await page.getByRole('button', { name: '停止既有工作' }).click();
+  await expect(page.getByRole('status').filter({ hasText: '可以重新送出歌曲' })).toBeVisible();
+  await page.getByRole('button', { name: '送出', exact: true }).click();
+  await expect(page.getByRole('status').filter({ hasText: '辨識完成' })).toBeVisible();
+  expect(uploads).toBe(1);
+});
+
 test('cancel replacement pauses submission and preserves lyrics; confirmation applies results', async ({
   page,
 }) => {
@@ -221,7 +269,8 @@ test('known lyrics keeps words through JSON, supports sentence playback and edit
     timeline.segments[0].words,
   );
   await page.getByRole('button', { name: '播放此句' }).click();
-  await expect(page.getByRole('button', { name: '暫停', exact: true })).toBeVisible();
+  // Preview controls can auto-hide while the pointer stays over the caption panel.
+  await expect(page.locator('.play-button')).toHaveAttribute('aria-label', '暫停');
   await expect(page.getByRole('slider', { name: '時間軸播放位置' })).toHaveValue('2');
   await page.locator('.preview-stage').hover({ position: { x: 10, y: 10 } });
   await expect(page.getByRole('button', { name: '播放', exact: true })).toBeVisible({

@@ -2,6 +2,37 @@ import { expect, test } from '@playwright/test';
 import fs from 'node:fs/promises';
 import { draftSnapshot, populateDraft } from './draftHelpers';
 
+for (const failed of [false, true]) {
+  test(`edits wait for the default Logo and save after it ${failed ? 'fails' : 'loads'}`, async ({
+    page,
+  }) => {
+    let release!: () => void;
+    const waiting = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    await page.route('**/logo.png', async (route) => {
+      await waiting;
+      if (failed) await route.abort('failed');
+      else await route.continue();
+    });
+    try {
+      await page.goto('/', { waitUntil: 'domcontentloaded' });
+      await expect(page.locator('.draft-status')).toContainText('編輯後會自動儲存');
+      await page.locator('.preview-stage').hover({ position: { x: 10, y: 10 } });
+      await page.getByLabel('歌曲名稱', { exact: true }).fill('Logo 載入中的編輯');
+      await page.waitForTimeout(1200);
+      expect(await draftSnapshot(page)).toEqual({ draft: undefined, files: [] });
+      release();
+      await expect(page.locator('.draft-status')).toHaveText('草稿已儲存');
+      const saved = await draftSnapshot(page);
+      expect(saved.draft?.manifest.settings.songName).toBe('Logo 載入中的編輯');
+      expect(saved.files).toHaveLength(failed ? 0 : 1);
+    } finally {
+      release();
+    }
+  });
+}
+
 test('autosave restores media and subtitles while edits reuse stored media', async ({ page }) => {
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
@@ -16,10 +47,10 @@ test('autosave restores media and subtitles while edits reuse stored media', asy
   });
   await populateDraft(page);
   const before = await draftSnapshot(page);
-  expect(before.files).toHaveLength(1);
+  expect(before.files).toHaveLength(2);
   expect(
     await page.evaluate(() => (window as unknown as { mediaWrites: number }).mediaWrites),
-  ).toBe(1);
+  ).toBe(2);
   await page.getByLabel('歌曲名稱', { exact: true }).fill('續作測試');
   if (
     (await page
@@ -35,7 +66,7 @@ test('autosave restores media and subtitles while edits reuse stored media', asy
   expect(after.files).toEqual(before.files);
   expect(
     await page.evaluate(() => (window as unknown as { mediaWrites: number }).mediaWrites),
-  ).toBe(1);
+  ).toBe(2);
   await page.reload();
   await page.locator('.preview-stage').hover({ position: { x: 10, y: 10 } });
   await expect(page.getByLabel('歌曲名稱', { exact: true })).toHaveValue('');
@@ -180,7 +211,7 @@ test('legacy packed drafts remain recoverable after database upgrade', async ({ 
   await expect(page.locator('.media-status')).toContainText('1 個素材');
   await page.getByLabel('歌曲名稱', { exact: true }).fill('已轉新版');
   await expect(page.locator('.draft-status')).toHaveText('草稿已儲存');
-  expect((await draftSnapshot(page)).files).toHaveLength(1);
+  expect((await draftSnapshot(page)).files).toHaveLength(2);
 });
 
 test('recognition and reset show icons with hover and keyboard labels', async ({ page }) => {
